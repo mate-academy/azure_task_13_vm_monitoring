@@ -41,7 +41,8 @@ New-AzVm `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
 -SshKeyName $sshKeyName `
--PublicIpAddressName $publicIpAddressName
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Creating a VM with system-assigned managed identity ..."
 $vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
