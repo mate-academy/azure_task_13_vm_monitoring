@@ -58,19 +58,19 @@ If you are a Windows user, before running this command, please also run the foll
 
 ## Requirements
 
-In this task, you will need to configure and check OS-level mertics for Azure Virtual Machine. To complete the task, you need to perform the following steps: 
+In this task, you will need to configure and check OS-level mertics for Azure Virtual Machine. To complete the task, you need to perform the following steps:
 
-1. Review the Powershell script `task.ps1`, which deploys virtual machine and installs the todo web app on it. Update the script to prepare the VM which it deploys for collecting OS-level metrics: 
+1. Review the Powershell script `task.ps1`, which deploys virtual machine and installs the todo web app on it. Update the script to prepare the VM which it deploys for collecting OS-level metrics:
 
-    - Enable a system-assigned identity for the VM. To learn how to do that, check the documentation of [New-AzVM](https://learn.microsoft.com/en-us/powershell/module/az.compute/new-azvm?view=azps-11.5.0) comandlet. 
+    - Enable a system-assigned identity for the VM. To learn how to do that, check the documentation of [New-AzVM](https://learn.microsoft.com/en-us/powershell/module/az.compute/new-azvm?view=azps-11.5.0) comandlet.
 
-    - [Deploy](https://learn.microsoft.com/en-us/azure/azure-monitor/agents/azure-monitor-agent-manage?tabs=azure-powershell#system-assigned-managed-identity) Azure Monitor Agent using Powershell to the VM. 
+    - [Deploy](https://learn.microsoft.com/en-us/azure/azure-monitor/agents/azure-monitor-agent-manage?tabs=azure-powershell#system-assigned-managed-identity) Azure Monitor Agent using Powershell to the VM.
 
-2. Run the updated `task.ps1` script to create a cloud infrastructure for the web app. 
+2. Run the updated `task.ps1` script to create a cloud infrastructure for the web app.
 
-3. In the task resource group (`mate-azure-task-13`) [create a Data Collection Rule](https://learn.microsoft.com/en-us/azure/azure-monitor/vm/tutorial-monitor-vm-guest), which collects VM guest OS metrics and send them to Azure Monitor. After you created the rule, wait 10-20 minutes for the Azure Monitor Agent to start sending metrics to Azure Monitor. 
+3. In the task resource group (`mate-azure-task-13`) [create a Data Collection Rule](https://learn.microsoft.com/en-us/azure/azure-monitor/vm/tutorial-monitor-vm-guest), which collects VM guest OS metrics and send them to Azure Monitor. After you created the rule, wait 10-20 minutes for the Azure Monitor Agent to start sending metrics to Azure Monitor.
 
-4. Verify that metrics are available for your VM. 
+4. Verify that metrics are available for your VM.
 
 5. Run artifacts generation script `scripts/generate-artifacts.ps1`.
 
