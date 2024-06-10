@@ -68,4 +68,5 @@ $monitorParams = @{
 }
 Set-AzVMExtension @monitorParams
 
+Write-Host "Creating data collection rule..."
 New-AzResourceGroupDeployment -ResourceGroupName "mate-azure-task-13" -TemplateFile "C:\Users\ipppk\azure_task_13_vm_monitoring\dcr.json"
