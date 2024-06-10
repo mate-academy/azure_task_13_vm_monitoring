@@ -32,7 +32,7 @@ if ($scriptContent | Where-Object {$_.ToLower().Contains("new-azvm")}) {
 
 if ($scriptContent | Where-Object {$_.ToLower().Contains("set-azvmextension")}) {
     Write-Host "Checking if script creates a VM extention resource - ok" 
-} else { 
+} else {
     throw "Script is not creating a VM extention resource with a Set-AzVMExtension comandled, please review it. "
 } 
 
