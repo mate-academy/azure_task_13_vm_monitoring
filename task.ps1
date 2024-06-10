@@ -67,3 +67,5 @@ $monitorParams = @{
     TypeHandlerVersion = '1.0'
 }
 Set-AzVMExtension @monitorParams
+
+New-AzResourceGroupDeployment -ResourceGroupName "mate-azure-task-13" -TemplateFile "C:\Users\ipppk\azure_task_13_vm_monitoring\dcr.json"

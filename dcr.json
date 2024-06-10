@@ -1,0 +1,69 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "resources": [
+      {
+        "type": "Microsoft.Insights/dataCollectionRules",
+        "apiVersion": "2023-03-11",
+        "location": "uksouth",
+        "name": "task-13-dcr",
+        "properties": {
+          "dataSources": {
+            "performanceCounters": [
+              {
+                "counterSpecifiers": [
+                  "Memory(*)\\Available MBytes Memory",
+                  "Memory(*)\\% Available Memory",
+                  "Memory(*)\\Used Memory MBytes",
+                  "Memory(*)\\% Used Memory",
+                  "Memory(*)\\Pages/sec",
+                  "Memory(*)\\Page Reads/sec",
+                  "Memory(*)\\Page Writes/sec",
+                  "Memory(*)\\Available MBytes Swap",
+                  "Memory(*)\\% Available Swap Space",
+                  "Memory(*)\\Used MBytes Swap Space",
+                  "Memory(*)\\% Used Swap Space",
+                  "Logical Disk(*)\\% Free Inodes",
+                  "Logical Disk(*)\\% Used Inodes",
+                  "Logical Disk(*)\\Free Megabytes",
+                  "Logical Disk(*)\\% Free Space",
+                  "Logical Disk(*)\\% Used Space",
+                  "Logical Disk(*)\\Logical Disk Bytes/sec",
+                  "Logical Disk(*)\\Disk Read Bytes/sec",
+                  "Logical Disk(*)\\Disk Write Bytes/sec",
+                  "Logical Disk(*)\\Disk Transfers/sec",
+                  "Logical Disk(*)\\Disk Reads/sec",
+                  "Logical Disk(*)\\Disk Writes/sec"
+                ],
+                "samplingFrequencyInSeconds": 60,
+                "streams": [
+                  "Microsoft-InsightsMetrics"
+                ],
+                "scheduledTransferPeriod": "PT1M",
+                "name": "perfCounterDataSource60"
+              }
+            ]
+          },
+          "dataFlows": [
+            {
+              "streams": [
+                "Microsoft-InsightsMetrics"
+              ],
+              "destinations": [
+                "azureMonitorMetrics-default"
+              ],
+              "transformKql": "source",
+              "outputStream": "Microsoft-InsightsMetrics"
+            }
+          ],
+          "destinations": {
+            "azureMonitorMetrics": {
+              "name": "azureMonitorMetrics-default"
+            }
+          },
+          "platformType": "Linux"
+        }
+      }
+    ]
+  }
+  
