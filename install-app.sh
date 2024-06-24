@@ -13,7 +13,7 @@ apt-get install python3-pip -yq
 # Create a directory for the app and download the files. 
 mkdir /app 
 # make sure to uncomment the line bellow and update the link with your GitHub username
-git clone https://github.com/mate-academy/azure_task_13_vm_monitoring.git
+git clone https://github.com/yaaszp/azure_task_13_vm_monitoring.git
 cp -r azure_task_13_vm_monitoring/app/* /app
 
 # create a service for the app via systemctl and start the app
