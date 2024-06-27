@@ -64,7 +64,7 @@ Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention ->
 Write-Host "Installing Azure Monitor Agent..."
-$amaParams = @{
+$monitorParams = @{
     ResourceGroupName  = $resourceGroupName
     VMName             = $vmName
     Name               = 'AzureMonitorLinuxAgent'
@@ -74,5 +74,5 @@ $amaParams = @{
  #   AutoUpgradeMinorVersion = $true
 }
 
-Set-AzVMExtension @MonitorParams
+Set-AzVMExtension $monitorParams
 Write-Host "Deployment complete. The VM is ready with Azure Monitor Agent installed."
