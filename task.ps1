@@ -66,4 +66,4 @@ $monitorParams = @{
     ExtensionType      = 'AzureMonitorLinuxAgent'
     TypeHandlerVersion = '1.0'
 }
-Set-AzVMExtension @monitorParams
+Set-AzVMExtension @amaParams
