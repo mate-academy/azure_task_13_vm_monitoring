@@ -74,5 +74,5 @@ $amaParams = @{
  #   AutoUpgradeMinorVersion = $true
 }
 
-Set-AzVMExtension @MonitorAgentParams
+Set-AzVMExtension @MonitorParams
 Write-Host "Deployment complete. The VM is ready with Azure Monitor Agent installed."
