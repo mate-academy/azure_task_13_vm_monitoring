@@ -51,7 +51,7 @@ $vm.Identity.Type = 'SystemAssigned'
 Update-AzVM -ResourceGroupName $resourceGroupName -VM $vm
 
 Write-Host "Installing the TODO web app..."
-$monitorParams = @{
+$Params = @{
     ResourceGroupName  = $resourceGroupName
     VMName             = $vmName
     Name               = 'CustomScript'
@@ -60,11 +60,11 @@ $monitorParams = @{
     TypeHandlerVersion = '2.1'
     Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
 }
-Set-AzVMExtension @monitorParams
+Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention ->
 Write-Host "Installing Azure Monitor Agent..."
-$monitorParams = @{
+$Params = @{
     ResourceGroupName  = $resourceGroupName
     VMName             = $vmName
     Name               = 'AzureMonitorLinuxAgent'
@@ -74,5 +74,5 @@ $monitorParams = @{
  #   AutoUpgradeMinorVersion = $true
 }
 
-Set-AzVMExtension $monitorParams
+Set-AzVMExtension $Params
 Write-Host "Deployment complete. The VM is ready with Azure Monitor Agent installed."
