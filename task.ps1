@@ -73,6 +73,6 @@ $monitorParams = @{
     TypeHandlerVersion = '1.0'
  #   AutoUpgradeMinorVersion = $true
 }
-
 Set-AzVMExtension @monitorParams
+
 Write-Host "Deployment complete. The VM is ready with Azure Monitor Agent installed."
