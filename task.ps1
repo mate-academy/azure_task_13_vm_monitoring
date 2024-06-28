@@ -51,7 +51,7 @@ $vm.Identity.Type = 'SystemAssigned'
 Update-AzVM -ResourceGroupName $resourceGroupName -VM $vm
 
 Write-Host "Installing the TODO web app..."
-$Params = @{
+$monitorParams = @{
     ResourceGroupName  = $resourceGroupName
     VMName             = $vmName
     Name               = 'CustomScript'
@@ -60,7 +60,7 @@ $Params = @{
     TypeHandlerVersion = '2.1'
     Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
 }
-Set-AzVMExtension @Params
+Set-AzVMExtension @monitorParams
 
 # Install Azure Monitor Agent VM extention ->
 Write-Host "Installing Azure Monitor Agent..."
