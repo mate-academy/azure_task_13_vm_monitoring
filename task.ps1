@@ -42,7 +42,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName `
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -54,6 +56,17 @@ $Params = @{
     TypeHandlerVersion = '2.1'
     Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
 }
-Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+
+Write-Host "Installing the Azure Monitor Agent..."
+$monitorParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.0'
+}
+
+Set-AzVMExtension @monitorParams
