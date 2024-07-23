@@ -1,0 +1,451 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "extensions_CustomScript_storageAccountName": {
+      "type": "SecureString"
+    },
+    "extensions_CustomScript_storageAccountKey": {
+      "type": "SecureString"
+    },
+    "extensions_CustomScript_commandToExecute": {
+      "type": "SecureString"
+    },
+    "virtualNetworks_vnet_name": {
+      "type": "String"
+    },
+    "virtualMachines_matebox_name": {
+      "type": "String"
+    },
+    "dataCollectionRules_DR_name": {
+      "type": "String"
+    },
+    "networkInterfaces_matebox_name": {
+      "type": "String"
+    },
+    "sshPublicKeys_linuxboxsshkey_name": {
+      "type": "String"
+    },
+    "publicIPAddresses_linuxboxpip_name": {
+      "type": "String"
+    },
+    "dataCollectionEndpoints_metrics_name": {
+      "type": "String"
+    },
+    "networkSecurityGroups_defaultnsg_name": {
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Compute/sshPublicKeys",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('sshPublicKeys_linuxboxsshkey_name')]",
+      "location": "uksouth",
+      "properties": {
+        "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXAzoO4t6d7qUwS/ncUvzOontXtfFNblSLWuSBOgQpY shcherbanvasyl@gmail.com.com"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionEndpoints",
+      "apiVersion": "2023-03-11",
+      "name": "[parameters('dataCollectionEndpoints_metrics_name')]",
+      "location": "uksouth",
+      "properties": {
+        "immutableId": "dce-ebb04761abb54b19b0ce758079dcce88",
+        "configurationAccess": {},
+        "logsIngestion": {},
+        "metricsIngestion": {},
+        "networkAcls": {
+          "publicNetworkAccess": "Enabled"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionRules",
+      "apiVersion": "2023-03-11",
+      "name": "[parameters('dataCollectionRules_DR_name')]",
+      "location": "uksouth",
+      "kind": "Linux",
+      "properties": {
+        "dataSources": {
+          "performanceCounters": [
+            {
+              "streams": [
+                "Microsoft-InsightsMetrics"
+              ],
+              "samplingFrequencyInSeconds": 60,
+              "counterSpecifiers": [
+                "Processor(*)\\% Processor Time",
+                "Processor(*)\\% Idle Time",
+                "Processor(*)\\% User Time",
+                "Processor(*)\\% Nice Time",
+                "Processor(*)\\% Privileged Time",
+                "Processor(*)\\% IO Wait Time",
+                "Processor(*)\\% Interrupt Time",
+                "Processor(*)\\% DPC Time",
+                "Memory(*)\\Available MBytes Memory",
+                "Memory(*)\\% Available Memory",
+                "Memory(*)\\Used Memory MBytes",
+                "Memory(*)\\% Used Memory",
+                "Memory(*)\\Pages/sec",
+                "Memory(*)\\Page Reads/sec",
+                "Memory(*)\\Page Writes/sec",
+                "Memory(*)\\Available MBytes Swap",
+                "Memory(*)\\% Available Swap Space",
+                "Memory(*)\\Used MBytes Swap Space",
+                "Memory(*)\\% Used Swap Space",
+                "Process(*)\\Pct User Time",
+                "Process(*)\\Pct Privileged Time",
+                "Process(*)\\Used Memory",
+                "Process(*)\\Virtual Shared Memory",
+                "Logical Disk(*)\\% Free Inodes",
+                "Logical Disk(*)\\% Used Inodes",
+                "Logical Disk(*)\\Free Megabytes",
+                "Logical Disk(*)\\% Free Space",
+                "Logical Disk(*)\\% Used Space",
+                "Logical Disk(*)\\Logical Disk Bytes/sec",
+                "Logical Disk(*)\\Disk Read Bytes/sec",
+                "Logical Disk(*)\\Disk Write Bytes/sec",
+                "Logical Disk(*)\\Disk Transfers/sec",
+                "Logical Disk(*)\\Disk Reads/sec",
+                "Logical Disk(*)\\Disk Writes/sec",
+                "Network(*)\\Total Bytes Transmitted",
+                "Network(*)\\Total Bytes Received",
+                "Network(*)\\Total Bytes",
+                "Network(*)\\Total Packets Transmitted",
+                "Network(*)\\Total Packets Received",
+                "Network(*)\\Total Rx Errors",
+                "Network(*)\\Total Tx Errors",
+                "Network(*)\\Total Collisions",
+                "System(*)\\Uptime",
+                "System(*)\\Load1",
+                "System(*)\\Load5",
+                "System(*)\\Load15",
+                "System(*)\\Users",
+                "System(*)\\Unique Users",
+                "System(*)\\CPUs"
+              ],
+              "name": "perfCounterDataSource60"
+            }
+          ]
+        },
+        "destinations": {
+          "azureMonitorMetrics": {
+            "name": "azureMonitorMetrics-default"
+          }
+        },
+        "dataFlows": [
+          {
+            "streams": [
+              "Microsoft-InsightsMetrics"
+            ],
+            "destinations": [
+              "azureMonitorMetrics-default"
+            ],
+            "transformKql": "source",
+            "outputStream": "Microsoft-InsightsMetrics"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-11-01",
+      "name": "[parameters('networkSecurityGroups_defaultnsg_name')]",
+      "location": "uksouth",
+      "properties": {
+        "flushConnection": false,
+        "securityRules": [
+          {
+            "name": "SSH",
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_defaultnsg_name'), 'SSH')]",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1001,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "HTTP",
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_defaultnsg_name'), 'HTTP')]",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8080",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1002,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-11-01",
+      "name": "[parameters('publicIPAddresses_linuxboxpip_name')]",
+      "location": "uksouth",
+      "sku": {
+        "name": "Basic",
+        "tier": "Regional"
+      },
+      "properties": {
+        "ipAddress": "172.166.104.15",
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Dynamic",
+        "idleTimeoutInMinutes": 4,
+        "dnsSettings": {
+          "domainNameLabel": "matetask132839506",
+          "fqdn": "matetask132839506.uksouth.cloudapp.azure.com"
+        },
+        "ipTags": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-11-01",
+      "name": "[parameters('virtualNetworks_vnet_name')]",
+      "location": "uksouth",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "default",
+            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_vnet_name'), 'default')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            },
+            "type": "Microsoft.Network/virtualNetworks/subnets"
+          }
+        ],
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('virtualMachines_matebox_name')]",
+      "location": "uksouth",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_matebox_name'))]"
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B1s"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('virtualMachines_matebox_name'), '_disk1_2d55aa111c094977a751eb94e1b87805')]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS",
+              "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_matebox_name'), '_disk1_2d55aa111c094977a751eb94e1b87805'))]"
+            },
+            "deleteOption": "Detach",
+            "diskSizeGB": 30
+          },
+          "dataDisks": [],
+          "diskControllerType": "SCSI"
+        },
+        "osProfile": {
+          "computerName": "[parameters('virtualMachines_matebox_name')]",
+          "adminUsername": "vr89",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/vr89/.ssh/authorized_keys",
+                  "keyData": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXAzoO4t6d7qUwS/ncUvzOontXtfFNblSLWuSBOgQpY shcherbanvasyl@gmail.com.com"
+                }
+              ]
+            },
+            "provisionVMAgent": true,
+            "patchSettings": {
+              "patchMode": "ImageDefault",
+              "assessmentMode": "ImageDefault"
+            }
+          },
+          "secrets": [],
+          "allowExtensionOperations": true,
+          "requireGuestProvisionSignal": true
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_matebox_name'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2024-03-01",
+      "name": "[concat(parameters('virtualMachines_matebox_name'), '/CustomScript')]",
+      "location": "uksouth",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_matebox_name'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh"
+          ]
+        },
+        "protectedSettings": {
+          "storageAccountName": "[parameters('extensions_CustomScript_storageAccountName')]",
+          "storageAccountKey": "[parameters('extensions_CustomScript_storageAccountKey')]",
+          "commandToExecute": "[parameters('extensions_CustomScript_commandToExecute')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2023-11-01",
+      "name": "[concat(parameters('networkSecurityGroups_defaultnsg_name'), '/HTTP')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+      ],
+      "properties": {
+        "protocol": "Tcp",
+        "sourcePortRange": "*",
+        "destinationPortRange": "8080",
+        "sourceAddressPrefix": "*",
+        "destinationAddressPrefix": "*",
+        "access": "Allow",
+        "priority": 1002,
+        "direction": "Inbound",
+        "sourcePortRanges": [],
+        "destinationPortRanges": [],
+        "sourceAddressPrefixes": [],
+        "destinationAddressPrefixes": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2023-11-01",
+      "name": "[concat(parameters('networkSecurityGroups_defaultnsg_name'), '/SSH')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+      ],
+      "properties": {
+        "protocol": "Tcp",
+        "sourcePortRange": "*",
+        "destinationPortRange": "22",
+        "sourceAddressPrefix": "*",
+        "destinationAddressPrefix": "*",
+        "access": "Allow",
+        "priority": 1001,
+        "direction": "Inbound",
+        "sourcePortRanges": [],
+        "destinationPortRanges": [],
+        "sourceAddressPrefixes": [],
+        "destinationAddressPrefixes": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-11-01",
+      "name": "[concat(parameters('virtualNetworks_vnet_name'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_vnet_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "10.0.0.0/24",
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-11-01",
+      "name": "[parameters('networkInterfaces_matebox_name')]",
+      "location": "uksouth",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_linuxboxpip_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_vnet_name'), 'default')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+      ],
+      "kind": "Regular",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[parameters('networkInterfaces_matebox_name')]",
+            "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_matebox_name')), concat('/ipConfigurations/', parameters('networkInterfaces_matebox_name')))]",
+            "type": "Microsoft.Network/networkInterfaces/ipConfigurations",
+            "properties": {
+              "privateIPAddress": "10.0.0.4",
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_linuxboxpip_name'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_vnet_name'), 'default')]"
+              },
+              "primary": true,
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": []
+        },
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "disableTcpStateTracking": false,
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+        },
+        "nicType": "Standard",
+        "auxiliaryMode": "None",
+        "auxiliarySku": "None"
+      }
+    }
+  ]
+}
