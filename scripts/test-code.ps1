@@ -22,7 +22,7 @@ if ($scriptContent | Where-Object {$_.ToLower().Contains("new-azsshkey")}) {
     Write-Host "Checking if script creates a SSH key resource - ok" 
 } else { 
     throw "Script is not creating a SSH key resource, please review it. "
-} 
+}
 
 if ($scriptContent | Where-Object {$_.ToLower().Contains("new-azvm")}) {
     Write-Host "Checking if script creates a VM resource - ok" 
@@ -34,16 +34,16 @@ if ($scriptContent | Where-Object {$_.ToLower().Contains("set-azvmextension")}) 
     Write-Host "Checking if script creates a VM extention resource - ok" 
 } else { 
     throw "Script is not creating a VM extention resource with a Set-AzVMExtension comandled, please review it. "
-} 
+}
 
-if ($scriptContent | Where-Object {$_.ToLower().Contains("-systemassignedidentity")}) {
+if ($scriptContent | Where-Object {$_.ToLower().Contains("-systemassignedidentity") -or $_.ToLower().Contains("-identitytype") }) {
     Write-Host "Checking if script enables system-assigned mannaged identity on the VM - ok" 
-} else { 
+} else {
     throw "Script is enabling system-assigned mannaged identity on the VM, please review it. "
 } 
 
 if ($scriptContent | Where-Object {$_.Contains("AzureMonitorLinuxAgent")}) {
-    Write-Host "Checking if script installs Azure Monitor Agent - ok" 
+    Write-Host "Checking if script installs Azure Monitor Agent - ok"
 } else { 
     throw "Script is not installing Azure Monitor Agent extention to the VM, please review it. "
-} 
+}
