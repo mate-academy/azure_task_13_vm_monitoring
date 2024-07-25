@@ -13,8 +13,8 @@ apt-get install python3-pip -yq
 # Create a directory for the app and download the files.
 mkdir /app
 cd ~
-# git clone https://github.com/YegorVolkov/azure_task_13_vm_monitoring.git
-# cp -r ./azure_task_13_vm_monitoring/app/* /app
+git clone https://github.com/YegorVolkov/azure_task_13_vm_monitoring.git
+cp -r ./azure_task_13_vm_monitoring/app/* /app
 
 # ensure scpipt is executable
 cd /app

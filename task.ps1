@@ -230,7 +230,8 @@ for ($i = 1; $i -le $availabilityCounter; $i++) {
   $vmconfig = New-AzVMConfig `
     -VMName                   $AvailVmName `
     -VMSize                   $vmSize `
-    -SecurityType             $vmSecurityType
+    -SecurityType             $vmSecurityType `
+    -IdentityType             SystemAssigned  # for exporting OS-level metrics to Azure Monitor
     # -AvailabilitySetId        $AvailabilitySetID
     # -Zone                     $i
   $vmconfig = Set-AzVMSourceImage `
@@ -265,8 +266,7 @@ for ($i = 1; $i -le $availabilityCounter; $i++) {
     -ResourceGroupName        $resourceGroupName `
     -Location                 $location `
     -VM                       $vmconfig `
-    -SshKeyName               $sshKeyName `
-    -SystemAssignedIdentity   # for exporting OS-level metrics to Azure Monitor
+    -SshKeyName               $sshKeyName
 
   $scriptUrl1 = "https://raw.githubusercontent.com/YegorVolkov/azure_task_13_vm_monitoring/dev/install-app.sh"
   $commandToExecute1 = "bash install-app.sh"
