@@ -24,6 +24,11 @@
           with option to choose between Availability Zone / Set
         - SSH authentification
         - password still necessary for admin privilages
+        - monitoring the OS-level metrics:
+          for this:
+          - ensure -IdentityType parameter is uncommented
+          - ensure "AzureMonitorAgent" extension installation is uncommented
+        - sequentional installation of different CustomScript extensions
         - Cost-Free deploying in terms of Azure Free Account Subscription
           Therefore in case of Availability options chosen:
           - PublicIP settings & VMConfig section is commented
@@ -106,8 +111,6 @@ Adjust according to needed option:
 # $availabilitySetName =        "mateavalset"
 # $availabilitySetFDcount =     2 # Max 3
 $availabilityCounter =        1 # Max 20 for AvailabilitySet
-
-
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup `
@@ -285,7 +288,6 @@ for ($i = 1; $i -le $availabilityCounter; $i++) {
         "commandToExecute" =  $commandToExecute1
     }
   while ($true) {
-    Start-Sleep -Seconds 10
     $CustomScriptObj = Get-AzVMExtension `
       -ResourceGroupName      $resourceGroupName `
       -VMName                 $AvailVmName `
@@ -300,17 +302,18 @@ for ($i = 1; $i -le $availabilityCounter; $i++) {
         break
     }
     Write-Host "'CustomScriptExtension' installation still in progress"
+    Start-Sleep -Seconds 10
   }
   Write-Host "Removing Used Script Extension 'CustomScriptExtension'"
   Remove-AzVMExtension `
     -ResourceGroupName        $resourceGroupName `
     -VMName                   $AvailVmName `
-    -Location                 $location `
-    -Name                     "CustomScriptExtension"
-
+    -Name                     "CustomScriptExtension" `
+    -Force
+  Write-Host "VM is ready for installation of next 'CustomScriptExtension'"
   Write-Host "Installing Script Extension 'Azure Monitor Agent'"
   Set-AzVMExtension `
-    -Name                     "Azure Monitor Agent" `
+    -Name                     "AzureMonitorAgent" `
     -ExtensionType            "AzureMonitorLinuxAgent" `
     -Publisher                "Microsoft.Azure.Monitor" `
     -ResourceGroupName        $resourceGroupName `
