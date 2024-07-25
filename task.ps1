@@ -29,6 +29,7 @@
           - ensure -IdentityType parameter is uncommented
           - ensure "AzureMonitorAgent" extension installation is uncommented
         - sequentional installation of different CustomScript extensions
+          for this uncomment section "Removing Used Script Extension 'CustomScriptExtension'"
         - Cost-Free deploying in terms of Azure Free Account Subscription
           Therefore in case of Availability options chosen:
           - PublicIP settings & VMConfig section is commented
@@ -304,13 +305,13 @@ for ($i = 1; $i -le $availabilityCounter; $i++) {
     Write-Host "'CustomScriptExtension' installation still in progress"
     Start-Sleep -Seconds 10
   }
-  Write-Host "Removing Used Script Extension 'CustomScriptExtension'"
-  Remove-AzVMExtension `
-    -ResourceGroupName        $resourceGroupName `
-    -VMName                   $AvailVmName `
-    -Name                     "CustomScriptExtension" `
-    -Force
-  Write-Host "VM is ready for installation of next 'CustomScriptExtension'"
+  # Write-Host "Removing Used Script Extension 'CustomScriptExtension'"
+  # Remove-AzVMExtension `
+  #   -ResourceGroupName        $resourceGroupName `
+  #   -VMName                   $AvailVmName `
+  #   -Name                     "CustomScriptExtension" `
+  #   -Force
+  # Write-Host "VM is ready for installation of next 'CustomScriptExtension'"
   Write-Host "Installing Script Extension 'Azure Monitor Agent'"
   Set-AzVMExtension `
     -Name                     "AzureMonitorAgent" `
