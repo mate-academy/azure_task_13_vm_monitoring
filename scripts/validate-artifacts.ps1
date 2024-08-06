@@ -12,8 +12,8 @@ $resourcesTemplateName = "exported-template.json"
 $tempFolderPath = "$PWD/temp"
 
 if ($DownloadArtifacts) { 
-    Write-Output "Reading config" 
-    $artifactsConfig = Get-Content -Path $artifactsConfigPath | ConvertFrom-Json 
+    Write-Output "Reading config"
+    $artifactsConfig = Get-Content -Path $artifactsConfigPath | ConvertFrom-Json
 
     Write-Output "Checking if temp folder exists"
     if (-not (Test-Path "$tempFolderPath")) { 
@@ -38,7 +38,7 @@ $nsg = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.
 if ($nsg) {
     if ($nsg.name.Count -eq 1) { 
         Write-Output "`u{2705} Checked if the Network Security Group resource exists - OK"
-    }  else { 
+    }  else {
         Write-Output `u{1F914}
         throw "More than one Network Security Group resource was found in the task resource group. Please make sure that your script creates only one network security group (check if script attaches the NSG you are creating to the subnet) and try again."
     }
@@ -51,7 +51,7 @@ $virtualNetwork = ( $TemplateObject.resources | Where-Object -Property type -EQ 
 if ($virtualNetwork ) {
     if ($virtualNetwork.name.Count -eq 1) { 
         Write-Output "`u{2705} Checked if virtual network exists - OK."
-    }  else { 
+    }  else {
         Write-Output `u{1F914}
         throw "More than one virtual network resource was found in the task resource group. Please make sure that your script deploys only 1 virtual network, and try again."
     }
@@ -63,7 +63,7 @@ if ($virtualNetwork ) {
 $virtualNetworkName = $virtualNetwork.name.Replace("[parameters('virtualNetworks_", "").Replace("_name')]", "")
 if ($virtualNetworkName -eq "vnet") { 
     Write-Output "`u{2705} Checked the virtual network name - OK."
-} else { 
+} else {
     Write-Output `u{1F914}
     throw "Unable to verify the virtual network name. Please make sure that your script creates a virtual network called 'vnet' and try again."
 }
@@ -72,7 +72,7 @@ $subnet = $virtualNetwork.properties.subnets
 if ($subnet) {
     if ($subnet.name.Count -eq 1) { 
         Write-Output "`u{2705} Checked if subnet exists - OK."
-    }  else { 
+    }  else {
         Write-Output `u{1F914}
         throw "More than one subnet was found in the virtual network. Please make sure that your script deploys only 1 subnet, and try again."
     }
@@ -203,7 +203,7 @@ if ($virtualMachine.properties.hardwareProfile.vmSize -eq "Standard_B1s") {
 
 $extention = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Compute/virtualMachines/extensions" )
 if ($extention) {
-    if ($extention.name.Count -eq 1) { 
+    if ($extention.name.Count -eq 1) {
         Write-Output "`u{2705} Checked if VM extention resource exists - OK."
     }  else { 
         Write-Output `u{1F914}

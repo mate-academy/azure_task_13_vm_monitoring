@@ -32,7 +32,7 @@ Write-Host "Creating a Public IP Address ..."
 New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
+# Update the VM deployment command to enable a system-assigned mannaged identity on it.
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -62,6 +62,7 @@ $Params = @{
     TypeHandlerVersion = '2.1'
     Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
 }
+Set-AzVMExtension @Params
 
 Write-Host "Installing the Azure Monitor Agent..."
 $agentParams = @{
@@ -75,4 +76,4 @@ $agentParams = @{
 
 Set-AzVMExtension @agentParams
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
