@@ -6,13 +6,13 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
+$sshKeyPublicKey = Get-Content "./key.txt"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
 $vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
-
+$dnsLabel = "matetask" + (Get-Random -Count 1)
+$typeHandlerVersion = '2.1'
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
 
@@ -34,15 +34,17 @@ New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGro
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
 New-AzVm `
--ResourceGroupName $resourceGroupName `
--Name $vmName `
--Location $location `
--image $vmImage `
--size $vmSize `
--SubnetName $subnetName `
--VirtualNetworkName $virtualNetworkName `
--SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+    -ResourceGroupName $resourceGroupName `
+    -Name $vmName `
+    -Location $location `
+    -image $vmImage `
+    -size $vmSize `
+    -SubnetName $subnetName `
+    -VirtualNetworkName $virtualNetworkName `
+    -SecurityGroupName $networkSecurityGroupName `
+    -SshKeyName $sshKeyName `
+    -PublicIpAddressName $publicIpAddressName `
+    -SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -51,9 +53,10 @@ $Params = @{
     Name               = 'CustomScript'
     Publisher          = 'Microsoft.Azure.Extensions'
     ExtensionType      = 'CustomScript'
-    TypeHandlerVersion = '2.1'
-    Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
+    TypeHandlerVersion = $typeHandlerVersion
+    Settings           = @{fileUris = @('https://raw.githubusercontent.com/elfredburger/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh' }
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
+Set-AzVMExtension -Name AzureMonitorLinuxAgent -ExtensionType AzureMonitorLinuxAgent -Publisher Microsoft.Azure.Monitor -ResourceGroupName $resourceGroupName -VMName $vmName -Location $location -TypeHandlerVersion "1.0" -EnableAutomaticUpgrade $true
