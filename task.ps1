@@ -42,7 +42,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName `
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -57,3 +59,12 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+Set-AzVMExtension `
+-Name AzureMonitorLinuxAgent `
+-ExtensionType AzureMonitorLinuxAgent `
+-Publisher Microsoft.Azure.Monitor `
+-ResourceGroupName $resourceGroupName `
+-VMName $vmName `
+-Location $location `
+-TypeHandlerVersion '1.32' `
+-EnableAutomaticUpgrade $true
