@@ -6,12 +6,12 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
+$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
 $vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+$dnsLabel = "matetask" + (Get-Random -Count 1)
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -32,7 +32,7 @@ Write-Host "Creating a Public IP Address ..."
 New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
+# Update the VM deployment command to enable a system-assigned mannaged identity on it.
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -42,7 +42,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName `
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -56,4 +58,15 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+Update-AzVM -ResourceGroupName $resourceGroupName -VM $vm -IdentityType "SystemAssigned"
+
+Set-AzVMExtension `
+    -Name AzureMonitorLinuxAgent `
+    -ExtensionType AzureMonitorLinuxAgent `
+    -Publisher Microsoft.Azure.Monitor `
+    -ResourceGroupName $resourceGroupName `
+    -VMName $vmName `
+    -Location $location `
+    -TypeHandlerVersion '1.10' `
+    -EnableAutomaticUpgrade $true
