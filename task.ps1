@@ -32,7 +32,7 @@ Write-Host "Creating a Public IP Address ..."
 New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
+# Update the VM deployment command to enable a system-assigned mannaged identity on it.
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -42,7 +42,7 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName `
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -56,4 +56,16 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+$MonitorParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.9'
+    Location           = $location
+    EnableAutomaticUpgrade = $true
+    Settings = @{}
+}
+
+Set-AzVMExtension @MonitorParams
