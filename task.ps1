@@ -40,7 +40,7 @@ New-AzVm `
 -image $vmImage `
 -size $vmSize `
 -SubnetName $subnetName `
--SystemAssignedIdentity  `
+-AssignIdentity  `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
 -SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
