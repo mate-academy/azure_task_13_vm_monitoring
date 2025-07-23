@@ -1,0 +1,70 @@
+{
+  "properties": {
+    "dataSources": {
+      "performanceCounters": [
+        {
+          "name": "cpu_utilization",
+          "streams": [
+            "Microsoft-InsightsMetrics"
+          ],
+          "counterSpecifiers": [
+            "\\Processor(_Total)\\% Processor Time",
+            "\\Processor(_Total)\\% User Time"
+          ],
+          "samplingFrequencyInSeconds": 60
+        },
+        {
+          "name": "memory_utilization",
+          "streams": [
+            "Microsoft-InsightsMetrics"
+          ],
+          "counterSpecifiers": [
+            "\\Memory\\Available MBytes",
+            "\\Memory\\% Committed Bytes In Use"
+          ],
+          "samplingFrequencyInSeconds": 60
+        },
+        {
+          "name": "logical_disk_utilization",
+          "streams": [
+            "Microsoft-InsightsMetrics"
+          ],
+          "counterSpecifiers": [
+            "\\LogicalDisk(_Total)\\% Free Space",
+            "\\LogicalDisk(_Total)\\Free Megabytes"
+          ],
+          "samplingFrequencyInSeconds": 60
+        },
+        {
+          "name": "network_traffic",
+          "streams": [
+            "Microsoft-InsightsMetrics"
+          ],
+          "counterSpecifiers": [
+            "\\Network Interface(*)\\Bytes Total/sec"
+          ],
+          "samplingFrequencyInSeconds": 60
+        }
+      ]
+    },
+    "destinations": {
+      "logAnalytics": [
+        {
+          "workspaceResourceId": "/subscriptions/b1e27144-9a08-4722-8311-9fce7db53f60/resourceGroups/mate-azure-task-13/providers/Microsoft.OperationalInsights/workspaces/LogAnalyticsWorkspaceTask17",
+          "workspaceId": "f07d3dc7-a213-40d6-82f6-2a8814e96cfd",
+          "name": "myLogAnalyticsWorkspace"
+        }
+      ]
+    },
+    "dataFlows": [
+      {
+        "streams": [
+          "Microsoft-InsightsMetrics"
+        ],
+        "destinations": [
+          "myLogAnalyticsWorkspace"
+        ]
+      }
+    ]
+  }
+}
