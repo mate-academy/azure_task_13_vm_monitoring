@@ -1,59 +1,73 @@
-$location = "uksouth"
-$resourceGroupName = "mate-azure-task-13"
-$networkSecurityGroupName = "defaultnsg"
-$virtualNetworkName = "vnet"
-$subnetName = "default"
-$vnetAddressPrefix = "10.0.0.0/16"
-$subnetAddressPrefix = "10.0.0.0/24"
-$sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
-$publicIpAddressName = "linuxboxpip"
-$vmName = "matebox"
-$vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+# Deploy a web app with OS-level monitoring
 
-Write-Host "Creating a resource group $resourceGroupName ..."
+# Resource group and VM variables
+$resourceGroupName = "mate-azure-task-13"
+$location = "westeurope"
+$vmName = "mateWebAppVM"
+$publicIpDnsName = "matewebappvm" + (Get-Random -Minimum 1000 -Maximum 9999)
+
+# Create resource group
 New-AzResourceGroup -Name $resourceGroupName -Location $location
 
-Write-Host "Creating a network security group $networkSecurityGroupName ..."
-$nsgRuleSSH = New-AzNetworkSecurityRuleConfig -Name SSH  -Protocol Tcp -Direction Inbound -Priority 1001 -SourceAddressPrefix * -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 22 -Access Allow;
-$nsgRuleHTTP = New-AzNetworkSecurityRuleConfig -Name HTTP  -Protocol Tcp -Direction Inbound -Priority 1002 -SourceAddressPrefix * -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 8080 -Access Allow;
-New-AzNetworkSecurityGroup -Name $networkSecurityGroupName -ResourceGroupName $resourceGroupName -Location $location -SecurityRules $nsgRuleSSH, $nsgRuleHTTP
+# Create subnet configuration
+$subnetConfig = New-AzVirtualNetworkSubnetConfig -Name "mySubnet" -AddressPrefix 192.168.1.0/24
 
-Write-Host "Creating a virtual network ..."
-$subnet = New-AzVirtualNetworkSubnetConfig -Name $subnetName -AddressPrefix $subnetAddressPrefix
-New-AzVirtualNetwork -Name $virtualNetworkName -ResourceGroupName $resourceGroupName -Location $location -AddressPrefix $vnetAddressPrefix -Subnet $subnet
+# Create virtual network
+$vnet = New-AzVirtualNetwork -ResourceGroupName $resourceGroupName -Location $location `
+  -Name "myVNET" -AddressPrefix 192.168.0.0/16 -Subnet $subnetConfig
 
-Write-Host "Creating a SSH key ..."
-New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
+# Create public IP address
+$pip = New-AzPublicIpAddress -ResourceGroupName $resourceGroupName -Location $location `
+  -Name "myPublicIP" -AllocationMethod Dynamic -DomainNameLabel $publicIpDnsName
 
-Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+# Create NSG and allow ports
+$nsgRuleWeb = New-AzNetworkSecurityRuleConfig -Name "myNetworkSecurityGroupRuleWeb" -Protocol Tcp `
+  -Direction Inbound -Priority 1000 -SourceAddressPrefix * -SourcePortRange * -DestinationAddressPrefix * `
+  -DestinationPortRange 8080 -Access Allow
 
-Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
-New-AzVm `
--ResourceGroupName $resourceGroupName `
--Name $vmName `
--Location $location `
--image $vmImage `
--size $vmSize `
--SubnetName $subnetName `
--VirtualNetworkName $virtualNetworkName `
--SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+$nsgRuleSSH = New-AzNetworkSecurityRuleConfig -Name "myNetworkSecurityGroupRuleSSH" -Protocol Tcp `
+  -Direction Inbound -Priority 1001 -SourceAddressPrefix * -SourcePortRange * -DestinationAddressPrefix * `
+  -DestinationPortRange 22 -Access Allow
 
-Write-Host "Installing the TODO web app..."
-$Params = @{
-    ResourceGroupName  = $resourceGroupName
-    VMName             = $vmName
-    Name               = 'CustomScript'
-    Publisher          = 'Microsoft.Azure.Extensions'
-    ExtensionType      = 'CustomScript'
-    TypeHandlerVersion = '2.1'
-    Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
-}
-Set-AzVMExtension @Params
+$nsg = New-AzNetworkSecurityGroup -ResourceGroupName $resourceGroupName -Location $location `
+  -Name "myNetworkSecurityGroup" -SecurityRules $nsgRuleWeb, $nsgRuleSSH
 
-# Install Azure Monitor Agent VM extention -> 
+# Create IP configuration
+$ipConfig = New-AzNetworkInterfaceIpConfig -Name "myIpConfig" -Subnet $vnet.Subnets[0] `
+  -PublicIpAddress $pip -PrivateIpAddressVersion IPv4
+
+# Create network interface
+$nic = New-AzNetworkInterface -Name "myNic" -ResourceGroupName $resourceGroupName `
+  -Location $location -IpConfiguration $ipConfig -NetworkSecurityGroup $nsg
+
+# Define a credential object
+$securePassword = ConvertTo-SecureString "Azure123456!" -AsPlainText -Force
+$cred = New-Object System.Management.Automation.PSCredential ("azureuser", $securePassword)
+
+# Create virtual machine configuration with System Assigned Identity
+$vmConfig = New-AzVMConfig -VMName $vmName -VMSize "Standard_B2s" | `
+  Set-AzVMOperatingSystem -Linux -ComputerName $vmName -Credential $cred | `
+  Set-AzVMSourceImage -PublisherName "Canonical" -Offer "UbuntuServer" -Skus "18.04-LTS" -Version "latest" | `
+  Add-AzVMNetworkInterface -Id $nic.Id | `
+  Set-AzVMMachineExtension -ExtensionName "AzureMonitorLinuxAgent" -Publisher "Microsoft.Azure.Monitor" `
+  -TypeHandlerVersion "1.0" -Settings @{} -ProtectedSettings @{} | `
+  Set-AzVMIdentity -SystemAssignedIdentity
+
+# Create the virtual machine
+New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
+
+# Install web app using custom script extension
+Set-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name "webAppDeployment" `
+  -Publisher "Microsoft.Azure.Extensions" -ExtensionType "CustomScript" -TypeHandlerVersion "2.0" `
+  -SettingString '{
+    "fileUris": ["https://raw.githubusercontent.com/Yevgene-DP/azure_task_13_vm_monitoring/main/install-app.sh"],
+    "commandToExecute": "bash install-app.sh"
+  }'
+
+# Get public IP address
+$ip = Get-AzPublicIpAddress -ResourceGroupName $resourceGroupName -Name "myPublicIP"
+
+Write-Output "Web app deployed successfully!"
+Write-Output "Access your web app at: http://$($ip.DnsSettings.Fqdn):8080"
+Write-Output "VM name: $vmName"
+Write-Output "Resource Group: $resourceGroupName"
