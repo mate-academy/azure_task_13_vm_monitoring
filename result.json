@@ -1,0 +1,29 @@
+Reading config
+Checking if temp folder exists
+Downloading artifacts
+Validating artifacts
+✅ Checked if the Network Security Group resource exists - OK
+✅ Checked if virtual network exists - OK.
+✅ Checked the virtual network name - OK.
+✅ Checked if subnet exists - OK.
+✅ Checked the subnet name - OK.
+✅ Checked if the Public IP resource exists - OK
+✅ Checked the Public IP DNS label - OK
+✅ Checked if the public SSH key resource exists - OK
+✅ Checked the public ssh key name - OK
+✅ Checked if Virtual Machine exists - OK.
+✅ Checked if VM has system-assigned identity enabled - OK.
+✅ Checked if the Network Interface resource exists - OK
+✅ Checked if the Public IP assigned to the VM - OK
+✅ Checked if virtual machine uses the public ssh key 'linuxboxsshkey' - OK
+✅ Checked Virtual Machine OS image publisher - OK
+✅ Checked Virtual Machine OS image offer - OK
+✅ Checked Virtual Machine size - OK
+✅ Checked if VM extention resource exists - OK.
+✅ Checked the VM extention type - OK.
+✅ Checked the VM extention script URI - OK.
+✅ Checked if the data collection rule exists - OK
+✅ Checked if the web application is running - OK
+✅ Checked if Azure Monitor Agend started sending metrics to Azure Monitor - OK
+
+🥳 Congratulations! All tests passed!
