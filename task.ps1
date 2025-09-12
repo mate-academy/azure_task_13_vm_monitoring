@@ -80,6 +80,7 @@ $StorageHT = @{
   SkuName           = 'Standard_LRS'
   Location          =  $location
 }
+
 $StorageAccount = New-AzStorageAccount @StorageHT
 $Context = $StorageAccount.Context
 $ContainerName = 'task-artifacts'
