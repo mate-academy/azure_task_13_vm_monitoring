@@ -1,0 +1,540 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "extensions_CustomScript_storageAccountName": {
+      "type": "SecureString"
+    },
+    "extensions_CustomScript_storageAccountKey": {
+      "type": "SecureString"
+    },
+    "extensions_CustomScript_commandToExecute": {
+      "type": "SecureString"
+    },
+    "virtualNetworks_vnet_name": {
+      "type": "String"
+    },
+    "virtualMachines_matebox_name": {
+      "type": "String"
+    },
+    "networkInterfaces_matebox_name": {
+      "type": "String"
+    },
+    "dataCollectionRules_task13_name": {
+      "type": "String"
+    },
+    "sshPublicKeys_linuxboxsshkey_name": {
+      "type": "String"
+    },
+    "publicIPAddresses_linuxboxpip_name": {
+      "type": "String"
+    },
+    "storageAccounts_mystorage4c0002_name": {
+      "type": "String"
+    },
+    "networkSecurityGroups_defaultnsg_name": {
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Compute/sshPublicKeys",
+      "apiVersion": "2024-11-01",
+      "name": "[parameters('sshPublicKeys_linuxboxsshkey_name')]",
+      "location": "uksouth",
+      "properties": {
+        "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA6jMFjjppv9oqnvskKP3C1nF++wngP/VVhZJ7Tf2aa5 litvi@MacBook-Air-LitvinchukRoman.local"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionRules",
+      "apiVersion": "2023-03-11",
+      "name": "[parameters('dataCollectionRules_task13_name')]",
+      "location": "uksouth",
+      "kind": "Linux",
+      "properties": {
+        "streamDeclarations": {},
+        "dataSources": {
+          "performanceCounters": [
+            {
+              "streams": [
+                "Microsoft-InsightsMetrics"
+              ],
+              "samplingFrequencyInSeconds": 60,
+              "counterSpecifiers": [
+                "Memory(*)\\Available MBytes Memory",
+                "Memory(*)\\% Available Memory",
+                "Memory(*)\\Used Memory MBytes",
+                "Memory(*)\\% Used Memory",
+                "Memory(*)\\Pages/sec",
+                "Memory(*)\\Page Reads/sec",
+                "Memory(*)\\Page Writes/sec",
+                "Memory(*)\\Available MBytes Swap",
+                "Memory(*)\\% Available Swap Space",
+                "Memory(*)\\Used MBytes Swap Space",
+                "Memory(*)\\% Used Swap Space",
+                "Logical Disk(*)\\% Free Inodes",
+                "Logical Disk(*)\\% Used Inodes",
+                "Logical Disk(*)\\Free Megabytes",
+                "Logical Disk(*)\\% Free Space",
+                "Logical Disk(*)\\% Used Space",
+                "Logical Disk(*)\\Logical Disk Bytes/sec",
+                "Logical Disk(*)\\Disk Read Bytes/sec",
+                "Logical Disk(*)\\Disk Write Bytes/sec",
+                "Logical Disk(*)\\Disk Transfers/sec",
+                "Logical Disk(*)\\Disk Reads/sec",
+                "Logical Disk(*)\\Disk Writes/sec"
+              ],
+              "name": "perfCounterDataSource60"
+            }
+          ]
+        },
+        "destinations": {
+          "azureMonitorMetrics": {
+            "name": "azureMonitorMetrics-default"
+          }
+        },
+        "dataFlows": [
+          {
+            "streams": [
+              "Microsoft-InsightsMetrics"
+            ],
+            "destinations": [
+              "azureMonitorMetrics-default"
+            ],
+            "transformKql": "source",
+            "outputStream": "Microsoft-InsightsMetrics"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-07-01",
+      "name": "[parameters('networkSecurityGroups_defaultnsg_name')]",
+      "location": "uksouth",
+      "properties": {
+        "flushConnection": false,
+        "securityRules": [
+          {
+            "name": "SSH",
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_defaultnsg_name'), 'SSH')]",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1001,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "HTTP",
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups/securityRules', parameters('networkSecurityGroups_defaultnsg_name'), 'HTTP')]",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8080",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1002,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2024-07-01",
+      "name": "[parameters('publicIPAddresses_linuxboxpip_name')]",
+      "location": "uksouth",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "ipAddress": "172.166.220.71",
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Static",
+        "idleTimeoutInMinutes": 4,
+        "dnsSettings": {
+          "domainNameLabel": "matetask530356453",
+          "fqdn": "matetask530356453.uksouth.cloudapp.azure.com"
+        },
+        "ipTags": [],
+        "ddosSettings": {
+          "protectionMode": "VirtualNetworkInherited"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-07-01",
+      "name": "[parameters('virtualNetworks_vnet_name')]",
+      "location": "uksouth",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "privateEndpointVNetPolicies": "Disabled",
+        "subnets": [
+          {
+            "name": "default",
+            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_vnet_name'), 'default')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            },
+            "type": "Microsoft.Network/virtualNetworks/subnets"
+          }
+        ],
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2025-01-01",
+      "name": "[parameters('storageAccounts_mystorage4c0002_name')]",
+      "location": "uksouth",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "allowCrossTenantReplication": false,
+        "minimumTlsVersion": "TLS1_0",
+        "allowBlobPublicAccess": false,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "services": {
+            "file": {
+              "keyType": "Account",
+              "enabled": true
+            },
+            "blob": {
+              "keyType": "Account",
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        },
+        "accessTier": "Hot"
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2024-11-01",
+      "name": "[parameters('virtualMachines_matebox_name')]",
+      "location": "uksouth",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_matebox_name'))]"
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B1s"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('virtualMachines_matebox_name'), '_disk1_10d99d3ed29a4b6f836407af350d0c38')]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS",
+              "id": "[resourceId('Microsoft.Compute/disks', concat(parameters('virtualMachines_matebox_name'), '_disk1_10d99d3ed29a4b6f836407af350d0c38'))]"
+            },
+            "deleteOption": "Detach",
+            "diskSizeGB": 30
+          },
+          "dataDisks": [],
+          "diskControllerType": "SCSI",
+          "alignRegionalDisksToVMZone": false
+        },
+        "osProfile": {
+          "computerName": "[parameters('virtualMachines_matebox_name')]",
+          "adminUsername": "azureuser",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/azureuser/.ssh/authorized_keys",
+                  "keyData": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA6jMFjjppv9oqnvskKP3C1nF++wngP/VVhZJ7Tf2aa5 litvi@MacBook-Air-LitvinchukRoman.local"
+                }
+              ]
+            },
+            "provisionVMAgent": true,
+            "patchSettings": {
+              "patchMode": "ImageDefault",
+              "assessmentMode": "ImageDefault"
+            }
+          },
+          "secrets": [],
+          "allowExtensionOperations": true,
+          "requireGuestProvisionSignal": true
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_matebox_name'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2024-11-01",
+      "name": "[concat(parameters('virtualMachines_matebox_name'), '/CustomScript')]",
+      "location": "uksouth",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_matebox_name'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh"
+          ]
+        },
+        "protectedSettings": {
+          "storageAccountName": "[parameters('extensions_CustomScript_storageAccountName')]",
+          "storageAccountKey": "[parameters('extensions_CustomScript_storageAccountKey')]",
+          "commandToExecute": "[parameters('extensions_CustomScript_commandToExecute')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2024-07-01",
+      "name": "[concat(parameters('networkSecurityGroups_defaultnsg_name'), '/HTTP')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+      ],
+      "properties": {
+        "protocol": "Tcp",
+        "sourcePortRange": "*",
+        "destinationPortRange": "8080",
+        "sourceAddressPrefix": "*",
+        "destinationAddressPrefix": "*",
+        "access": "Allow",
+        "priority": 1002,
+        "direction": "Inbound",
+        "sourcePortRanges": [],
+        "destinationPortRanges": [],
+        "sourceAddressPrefixes": [],
+        "destinationAddressPrefixes": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2024-07-01",
+      "name": "[concat(parameters('networkSecurityGroups_defaultnsg_name'), '/SSH')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+      ],
+      "properties": {
+        "protocol": "Tcp",
+        "sourcePortRange": "*",
+        "destinationPortRange": "22",
+        "sourceAddressPrefix": "*",
+        "destinationAddressPrefix": "*",
+        "access": "Allow",
+        "priority": 1001,
+        "direction": "Inbound",
+        "sourcePortRanges": [],
+        "destinationPortRanges": [],
+        "sourceAddressPrefixes": [],
+        "destinationAddressPrefixes": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2024-07-01",
+      "name": "[concat(parameters('virtualNetworks_vnet_name'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_vnet_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "10.0.0.0/24",
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2025-01-01",
+      "name": "[concat(parameters('storageAccounts_mystorage4c0002_name'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_mystorage4c0002_name'))]"
+      ],
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "properties": {
+        "cors": {
+          "corsRules": []
+        },
+        "deleteRetentionPolicy": {
+          "allowPermanentDelete": false,
+          "enabled": false
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices",
+      "apiVersion": "2025-01-01",
+      "name": "[concat(parameters('storageAccounts_mystorage4c0002_name'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_mystorage4c0002_name'))]"
+      ],
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "properties": {
+        "protocolSettings": {
+          "smb": {}
+        },
+        "cors": {
+          "corsRules": []
+        },
+        "shareDeleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/queueServices",
+      "apiVersion": "2025-01-01",
+      "name": "[concat(parameters('storageAccounts_mystorage4c0002_name'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_mystorage4c0002_name'))]"
+      ],
+      "properties": {
+        "cors": {
+          "corsRules": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/tableServices",
+      "apiVersion": "2025-01-01",
+      "name": "[concat(parameters('storageAccounts_mystorage4c0002_name'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_mystorage4c0002_name'))]"
+      ],
+      "properties": {
+        "cors": {
+          "corsRules": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2025-01-01",
+      "name": "[concat(parameters('storageAccounts_mystorage4c0002_name'), '/default/task-artifacts')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_mystorage4c0002_name'), 'default')]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_mystorage4c0002_name'))]"
+      ],
+      "properties": {
+        "immutableStorageWithVersioning": {
+          "enabled": false
+        },
+        "defaultEncryptionScope": "$account-encryption-key",
+        "denyEncryptionScopeOverride": false,
+        "publicAccess": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2024-07-01",
+      "name": "[parameters('networkInterfaces_matebox_name')]",
+      "location": "uksouth",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_linuxboxpip_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_vnet_name'), 'default')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+      ],
+      "kind": "Regular",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[parameters('networkInterfaces_matebox_name')]",
+            "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_matebox_name')), concat('/ipConfigurations/', parameters('networkInterfaces_matebox_name')))]",
+            "type": "Microsoft.Network/networkInterfaces/ipConfigurations",
+            "properties": {
+              "privateIPAddress": "10.0.0.4",
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_linuxboxpip_name'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_vnet_name'), 'default')]"
+              },
+              "primary": true,
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": []
+        },
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "disableTcpStateTracking": false,
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_defaultnsg_name'))]"
+        },
+        "nicType": "Standard",
+        "auxiliaryMode": "None",
+        "auxiliarySku": "None"
+      }
+    }
+  ]
+}
