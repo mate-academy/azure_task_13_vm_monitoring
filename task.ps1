@@ -32,6 +32,7 @@ Write-Host "Creating a Public IP Address ..."
 New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
+# Update the VM deployment command to enable a system-assigned mannaged identity on it.
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -57,7 +58,7 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-Write-Host "Installing the Azure Monitor Agent VM extension ..."
+Write-Host "Creating Azure Monitor Agent Extension..."
 Set-AzVMExtension `
 -Name AzureMonitorLinuxAgent `
 -ExtensionType AzureMonitorLinuxAgent `
@@ -65,5 +66,5 @@ Set-AzVMExtension `
 -ResourceGroupName $resourceGroupName `
 -VMName $vmName `
 -Location $location `
--TypeHandlerVersion "1.25" `
+-TypeHandlerVersion "1.19" `
 -EnableAutomaticUpgrade $true
