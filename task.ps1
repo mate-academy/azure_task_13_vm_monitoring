@@ -69,5 +69,12 @@ $amaParams = @{
     ExtensionType      = 'AzureMonitorLinuxAgent'
     TypeHandlerVersion = '1.0'
     Location           = $location
+    Settings           = @{
+        authentication = @{
+            managedIdentity = @{
+                type = "SystemAssigned"
+            }
+        }
+    }
 }
 Set-AzVMExtension @amaParams
