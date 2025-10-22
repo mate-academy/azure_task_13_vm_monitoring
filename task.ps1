@@ -31,18 +31,19 @@ New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey 
 Write-Host "Creating a Public IP Address ..."
 New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
 
-Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
+Write-Host "Creating a VM with system-assigned managed identity ..."
 New-AzVm `
--ResourceGroupName $resourceGroupName `
--Name $vmName `
--Location $location `
--image $vmImage `
--size $vmSize `
--SubnetName $subnetName `
--VirtualNetworkName $virtualNetworkName `
--SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+  -ResourceGroupName $resourceGroupName `
+  -Name $vmName `
+  -Location $location `
+  -Image $vmImage `
+  -Size $vmSize `
+  -SubnetName $subnetName `
+  -VirtualNetworkName $virtualNetworkName `
+  -SecurityGroupName $networkSecurityGroupName `
+  -SshKeyName $sshKeyName `
+  -PublicIpAddressName $publicIpAddressName `
+  -AssignIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -52,8 +53,21 @@ $Params = @{
     Publisher          = 'Microsoft.Azure.Extensions'
     ExtensionType      = 'CustomScript'
     TypeHandlerVersion = '2.1'
-    Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
+    Settings           = @{
+        fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh')
+        commandToExecute = './install-app.sh'
+    }
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+Write-Host "Installing Azure Monitor Agent..."
+$amaParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.0'
+    Location           = $location
+}
+Set-AzVMExtension @amaParams
