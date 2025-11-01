@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "canadacentral"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -6,12 +6,12 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
+$sshKeyPublicKey = Get-Content "~/.ssh/id_ed25519.pub" -Raw
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
 $vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+$dnsLabel = "yurii"
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -29,10 +29,11 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
+# Update the VM deployment command to enable a system-assigned mannaged identity on it.
+$myPwd = Read-Host -AsSecureString "Enter password for VM yurii"
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -42,7 +43,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity `
+-Credential (New-Object System.Management.Automation.PSCredential("yurii", $myPwd))
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -56,4 +59,13 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
+$amaParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.27'
+}
+Set-AzVMExtension @amaParams
