@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
 # Script to silently install and start the todo web app on the virtual machine. 
 # Note that all commands bellow are without sudo - that's because extention mechanism 
 # runs scripts under root user. 
@@ -8,12 +12,13 @@
 # used to suppress any interactive prompts - we won't be able to confirm operation 
 # when running the script as VM extention.  
 apt-get update -yq
-apt-get install python3-pip -yq
+apt-get install -yq git python3 python3-pip
 
 # Create a directory for the app and download the files. 
-mkdir /app 
+mkdir -p /app
+rm -rf /app/* 
 # make sure to uncomment the line bellow and update the link with your GitHub username
-git clone https://github.com/mate-academy/azure_task_13_vm_monitoring.git
+git clone https://github.com/KyryloKilin/azure_task_13_vm_monitoring.git
 cp -r azure_task_13_vm_monitoring/app/* /app
 
 # create a service for the app via systemctl and start the app
