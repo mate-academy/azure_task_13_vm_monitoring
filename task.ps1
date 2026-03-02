@@ -68,7 +68,7 @@ $AmaParams = @{
     Name               = 'AzureMonitorLinuxAgent'
     Publisher          = 'Microsoft.Azure.Monitor'
     ExtensionType      = 'AzureMonitorLinuxAgent'
-    TypeHandlerVersion = '1.0'
+    TypeHandlerVersion = '1.30'
     Location           = $location
 }
 Set-AzVMExtension @AmaParams
