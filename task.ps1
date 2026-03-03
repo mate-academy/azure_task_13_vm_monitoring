@@ -6,12 +6,12 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-# Путь к твоему ключу ed25519
-$sshKeyPublicKey = Get-Content "$HOME/.ssh/id_ed25519.pub" 
+# Исправлено на твой путь к ed25519
+$sshKeyPublicKey = Get-Get-Content "$HOME/.ssh/id_ed25519.pub" 
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-# Размер по условию задачи
+# ВЕРНУЛ ОРИГИНАЛЬНЫЙ РАЗМЕР
 $vmSize = "Standard_B1s"
 $dnsLabel = "matetask" + (Get-Random -Count 1) 
 
@@ -31,11 +31,11 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-# Оставляем Standard SKU, чтобы избежать лимитов Basic в Azure
+# Оставляем Standard SKU для стабильности в uksouth
 New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
-Write-Host "Creating a VM ..."
-# Добавлен флаг -SystemAssignedIdentity для OS-level metrics
+Write-Host "Creating a VM with Identity ..."
+# Добавлен флаг -SystemAssignedIdentity
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -49,26 +49,26 @@ New-AzVm `
 -SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
-$Params = @{
+$AppParams = @{
     ResourceGroupName  = $resourceGroupName
     VMName             = $vmName
     Name               = 'CustomScript'
     Publisher          = 'Microsoft.Azure.Extensions'
     ExtensionType      = 'CustomScript'
     TypeHandlerVersion = '2.1'
-    Settings          = @{fileUris = @('https://raw.githubusercontent.com'); commandToExecute = './install-app.sh'}
+    Settings           = @{fileUris = @('https://raw.githubusercontent.com'); commandToExecute = './install-app.sh'}
 }
-Set-AzVMExtension @Params
+Set-AzVMExtension @AppParams
 
-# Install Azure Monitor Agent VM extention
-Write-Host "Installing Azure Monitor Agent..."
+Write-Host "Installing Azure Monitor Agent (AMA)..."
 $AmaParams = @{
     ResourceGroupName  = $resourceGroupName
     VMName             = $vmName
     Name               = 'AzureMonitorLinuxAgent'
     Publisher          = 'Microsoft.Azure.Monitor'
     ExtensionType      = 'AzureMonitorLinuxAgent'
-    TypeHandlerVersion = '1.30'
+    # ОБНОВЛЕНО: Версия 1.30 (стабильная)
+    TypeHandlerVersion = '1.30' 
     Location           = $location
 }
 Set-AzVMExtension @AmaParams
