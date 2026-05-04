@@ -1,23 +1,26 @@
 #!/bin/bash
+set -euxo pipefail
 
-# Script to silently install and start the todo web app on the virtual machine. 
-# Note that all commands bellow are without sudo - that's because extention mechanism 
-# runs scripts under root user. 
-
-# install system updates and isntall python3-pip package using apt. '-yq' flags are 
-# used to suppress any interactive prompts - we won't be able to confirm operation 
-# when running the script as VM extention.  
 apt-get update -yq
-apt-get install python3-pip -yq
+apt-get install -yq git python3-pip python3-venv
 
-# Create a directory for the app and download the files. 
-mkdir /app 
-# make sure to uncomment the line bellow and update the link with your GitHub username
-git clone https://github.com/mate-academy/azure_task_13_vm_monitoring.git
-cp -r azure_task_13_vm_monitoring/app/* /app
+REPO_URL="https://github.com/NazarKulyk6/azure_task_13_vm_monitoring.git"
+APP_DIR=/app
+rm -rf "${APP_DIR:?}"/*
+mkdir -p "$APP_DIR"
 
-# create a service for the app via systemctl and start the app
-mv /app/todoapp.service /etc/systemd/system/
+cd /tmp
+rm -rf azure_task_13_vm_monitoring
+git clone --depth 1 "$REPO_URL" azure_task_13_vm_monitoring
+cp -r azure_task_13_vm_monitoring/app/* "$APP_DIR/"
+chmod +x "$APP_DIR/start.sh"
+
+python3 -m venv "$APP_DIR/venv"
+"$APP_DIR/venv/bin/pip" install --upgrade pip
+"$APP_DIR/venv/bin/pip" install -r "$APP_DIR/requirements.txt"
+"$APP_DIR/venv/bin/python" "$APP_DIR/manage.py" migrate --noinput
+
+mv "$APP_DIR/todoapp.service" /etc/systemd/system/
 systemctl daemon-reload
 systemctl start todoapp
 systemctl enable todoapp
