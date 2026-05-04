@@ -1,0 +1,29 @@
+{
+  "properties": {
+    "dataSources": {
+      "performanceCounters": [
+        {
+          "name": "perfCountersLinux",
+          "streams": ["Microsoft-Perf"],
+          "samplingFrequencyInSeconds": 60,
+          "counterSpecifiers": [
+            "\\Memory\\Available MBytes",
+            "\\Processor(_Total)\\% Processor Time"
+          ]
+        }
+      ]
+    },
+    "destinations": {
+      "azureMonitorMetrics": {
+        "name": "azureMonitorMetrics-default"
+      }
+    },
+    "dataFlows": [
+      {
+        "streams": ["Microsoft-Perf"],
+        "destinations": ["azureMonitorMetrics-default"],
+        "dataSources": ["perfCountersLinux"]
+      }
+    ]
+  }
+}
