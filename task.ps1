@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "westus3"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -10,7 +10,7 @@ $sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
+$vmSize = "Standard_B2ats_v2"
 $dnsLabel = "matetask" + (Get-Random -Count 1) 
 
 Write-Host "Creating a resource group $resourceGroupName ..."
@@ -42,7 +42,8 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -57,3 +58,55 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+Write-Host "Installing Azure Monitor Agent..."
+$AMAParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.5'
+    Location           = $location
+    EnableAutomaticUpgrade = $true
+}
+Set-AzVMExtension @AMAParams
+
+# Create Data Collection Rule for VM guest OS metrics
+Write-Host "Creating Data Collection Rule for VM guest OS metrics..."
+
+# Get the VM resource ID
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+
+# Define performance counters data source
+$perfCounters = New-AzPerfCounterDataSourceObject `
+    -Name "perfCounterDataSource" `
+    -Stream "Microsoft-Perf" `
+    -CounterSpecifier @(
+        "\\Processor(_Total)\\% Processor Time",
+        "\\Memory\\Available Bytes",
+        "\\Memory\\% Used Memory",
+        "\\LogicalDisk(_Total)\\% Free Space",
+        "\\LogicalDisk(_Total)\\Free Megabytes",
+        "\\Network Interface(*)\\Bytes Sent/sec",
+        "\\Network Interface(*)\\Bytes Received/sec"
+    ) `
+    -SamplingFrequencyInSecond 60
+
+# Create Data Collection Rule
+$dcrName = "dcr-$vmName"
+$dcr = New-AzDataCollectionRule `
+    -Name $dcrName `
+    -ResourceGroupName $resourceGroupName `
+    -Location $location `
+    -DataFlow (New-AzDataFlowObject -Stream "Microsoft-Perf" -Destination "azureMonitorMetrics") `
+    -DataSourcePerformanceCounter $perfCounters `
+    -DestinationAzureMonitorMetricName "azureMonitorMetrics" `
+    -Kind "Linux"
+
+# Associate the DCR with the VM
+Write-Host "Associating Data Collection Rule with VM..."
+$associationName = "$vmName-dcr-association"
+New-AzDataCollectionRuleAssociation `
+    -AssociationName $associationName `
+    -ResourceUri $vm.Id `
+    -DataCollectionRuleId $dcr.Id 

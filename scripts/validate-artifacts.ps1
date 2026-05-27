@@ -194,11 +194,11 @@ if ($virtualMachine.properties.storageProfile.imageReference.offer.Contains('ubu
     throw "Virtual Machine uses wrong OS image. Please make sure that your script creates a VM from image with friendly name 'Ubuntu2204' and try again." 
 }
 
-if ($virtualMachine.properties.hardwareProfile.vmSize -eq "Standard_B1s") { 
+if ($virtualMachine.properties.hardwareProfile.vmSize -eq "Standard_B2ats_v2") { 
     Write-Output "`u{2705} Checked Virtual Machine size - OK"
 } else { 
     Write-Output `u{1F914}
-    throw "Virtual Machine size is not set to B1s. Please make sure that your script creates a VM with size B1s and try again."
+    throw "Virtual Machine size is not set to Standard_B2ats_v2. Please make sure that your script creates a VM with size Standard_B2ats_v2 and try again."
 }
 
 $extention = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Compute/virtualMachines/extensions" )
