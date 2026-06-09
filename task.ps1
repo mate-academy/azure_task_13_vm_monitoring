@@ -70,3 +70,5 @@ $Params_monitoring = @{
     EnableAutomaticUpgrade = $true
 }
 Set-AzVMExtension @Params_monitoring
+
+New-AzDataCollectionRule -Name "matebox-dcr" -ResourceGroupName $resourceGroupName -JsonFilePath ./rule.json
