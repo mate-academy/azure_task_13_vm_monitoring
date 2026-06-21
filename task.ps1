@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "westeurope"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -10,8 +10,8 @@ $sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+$vmSize = "Standard_B2ts_v2"
+$dnsLabel = "matetask" + (Get-Random -Count 1)
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -29,10 +29,10 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
-# Update the VM deployment command to enable a system-assigned mannaged identity on it. 
+# Update the VM deployment command to enable a system-assigned mannaged identity on it.
 New-AzVm `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
@@ -42,7 +42,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName `
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -56,4 +58,13 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
+Set-AzVMExtension `
+-Name AzureMonitorLinuxAgent `
+-ExtensionType AzureMonitorLinuxAgent `
+-Publisher Microsoft.Azure.Monitor `
+-ResourceGroupName $resourceGroupName `
+-VMName $vmName `
+-Location $location `
+-TypeHandlerVersion "1.0" `
+-EnableAutomaticUpgrade $true
