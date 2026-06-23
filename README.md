@@ -39,7 +39,7 @@ In this task, you must configure and check OS-level metrics for Azure Virtual Ma
 
 1. Review the Powershell script `task.ps1`, which deploys a virtual machine and installs the todo web app. Update the script to prepare the VM which it deploys for collecting OS-level metrics: 
 
-    - Enable a system-assigned identity for the VM. To learn how to do that, check the documentation of [New-AzVM](https://learn.microsoft.com/en-us/powershell/module/az.compute/new-azvm?view=azps-11.5.0) comandlet. 
+    - Enable a system-assigned identity for the VM. To learn how to do that, check the documentation of [New-AzVM](https://learn.microsoft.com/en-us/powershell/module/az.compute/new-azvm?view=azps-11.5.0) comandlet.
 
     - [Deploy](https://learn.microsoft.com/en-us/azure/azure-monitor/agents/azure-monitor-agent-manage?tabs=azure-powershell#system-assigned-managed-identity) Azure Monitor Agent using Powershell to the VM. 
 
