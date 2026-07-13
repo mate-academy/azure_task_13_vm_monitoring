@@ -36,10 +36,11 @@ $TemplateObject = ConvertFrom-Json $TemplateFileText -AsHashtable
 
 $nsg = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Network/networkSecurityGroups")
 if ($nsg) {
-    if ($nsg.name.Count -eq 1) { 
+    if ($nsg.name.Count -eq 1) {
         Write-Output "`u{2705} Checked if the Network Security Group resource exists - OK"
-    }  else { 
+    }  else {
         Write-Output `u{1F914}
+
         throw "More than one Network Security Group resource was found in the task resource group. Please make sure that your script creates only one network security group (check if script attaches the NSG you are creating to the subnet) and try again."
     }
 } else {
@@ -194,7 +195,7 @@ if ($virtualMachine.properties.storageProfile.imageReference.offer.Contains('ubu
     throw "Virtual Machine uses wrong OS image. Please make sure that your script creates a VM from image with friendly name 'Ubuntu2204' and try again." 
 }
 
-if ($virtualMachine.properties.hardwareProfile.vmSize -eq "Standard_B1s") { 
+if ($virtualMachine.properties.hardwareProfile.vmSize -eq "Standard_B2ats_v2") {
     Write-Output "`u{2705} Checked Virtual Machine size - OK"
 } else { 
     Write-Output `u{1F914}
@@ -235,10 +236,13 @@ if ($extention.properties.settings.fileUris[0]) {
 
 $dcr = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Insights/dataCollectionRules")
 if ($dcr) {
-    if ($dcr.name.Count -eq 1) { 
+    if ($dcr.name.Count -eq 2) {
         Write-Output "`u{2705} Checked if the data collection rule exists - OK"
     }  else { 
         Write-Output `u{1F914}
+
+        Write-Host $dcr.name.Count
+
         throw "More than one Azure Monitor Data Collection rule was found in the VM resource group. Please delete all un-used data collection rules and try again."
     }
 } else {
