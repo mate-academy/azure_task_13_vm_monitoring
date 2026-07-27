@@ -39,6 +39,7 @@ New-AzVm `
 -Location $location `
 -image $vmImage `
 -size $vmSize `
+-SystemAssignedIdentity `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
@@ -56,7 +57,7 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
 
 Set-AzVMExtension `
 -Name AzureMonitorLinuxAgent `
