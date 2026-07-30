@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "ukwest"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -10,8 +10,11 @@ $sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+$vmSize = "Standard_B2ts_v2"
+$dnsLabel = "matetask" + (Get-Random -Count 1)
+$adminUsername = "azureuser"
+$adminPassword = ConvertTo-SecureString (New-Guid).Guid -AsPlainText -Force
+$cred = New-Object System.Management.Automation.PSCredential ($adminUsername, $adminPassword)
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -29,7 +32,7 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
@@ -42,7 +45,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName `
+-Credential $cred `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -56,4 +61,30 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+Set-AzVMExtension `
+  -ResourceGroupName $resourceGroupName `
+  -VMName $vmName `
+  -Location $location `
+  -Name "AzureMonitorLinuxAgent" `
+  -Publisher "Microsoft.Azure.Monitor" `
+  -ExtensionType "AzureMonitorLinuxAgent" `
+  -TypeHandlerVersion "1.33" `
+  -EnableAutomaticUpgrade $true
+
+
+$dataCollectionRuleName = "rules"
+$dataCollectionRulesFile = Join-Path $PSScriptRoot "dcr-rules.json"
+$dcrDefinition = Get-Content -Path $dataCollectionRulesFile -Raw | ConvertFrom-Json
+$dcrDefinition | Add-Member -NotePropertyName "location" -NotePropertyValue $location -Force
+$dcr = New-AzDataCollectionRule `
+  -ResourceGroupName $resourceGroupName `
+  -Name $dataCollectionRuleName `
+  -JsonString ($dcrDefinition | ConvertTo-Json -Depth 10)
+
+
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+New-AzDataCollectionRuleAssociation `
+  -ResourceUri $vm.Id `
+  -AssociationName "$vmName-dcr-association" `
+  -DataCollectionRuleId $dcr.Id
+

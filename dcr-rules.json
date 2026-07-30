@@ -1,0 +1,55 @@
+{
+  "kind": "Linux",
+  "properties": {
+    "dataSources": {
+      "performanceCounters": [
+        {
+          "streams": [
+            "Microsoft-InsightsMetrics"
+          ],
+          "samplingFrequencyInSeconds": 60,
+          "counterSpecifiers": [
+            "Logical Disk(*)\\% Free Inodes",
+            "Logical Disk(*)\\% Used Inodes",
+            "Logical Disk(*)\\Free Megabytes",
+            "Logical Disk(*)\\% Free Space",
+            "Logical Disk(*)\\% Used Space",
+            "Logical Disk(*)\\Logical Disk Bytes/sec",
+            "Logical Disk(*)\\Disk Read Bytes/sec",
+            "Logical Disk(*)\\Disk Write Bytes/sec",
+            "Logical Disk(*)\\Disk Transfers/sec",
+            "Logical Disk(*)\\Disk Reads/sec",
+            "Logical Disk(*)\\Disk Writes/sec",
+            "Memory(*)\\Available MBytes Memory",
+            "Memory(*)\\% Available Memory",
+            "Memory(*)\\Used Memory MBytes",
+            "Memory(*)\\% Used Memory",
+            "Memory(*)\\Pages/sec",
+            "Memory(*)\\Page Reads/sec",
+            "Memory(*)\\Page Writes/sec",
+            "Memory(*)\\Available MBytes Swap",
+            "Memory(*)\\% Available Swap Space",
+            "Memory(*)\\Used MBytes Swap Space",
+            "Memory(*)\\% Used Swap Space"
+          ],
+          "name": "perfCounterDataSource60"
+        }
+      ]
+    },
+    "destinations": {
+      "azureMonitorMetrics": {
+        "name": "azureMonitorMetrics-default"
+      }
+    },
+    "dataFlows": [
+      {
+        "streams": [
+          "Microsoft-InsightsMetrics"
+        ],
+        "destinations": [
+          "azureMonitorMetrics-default"
+        ]
+      }
+    ]
+  }
+}
