@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "denmarkeast"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -57,3 +57,12 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+Set-AzVMExtension `
+    -ResourceGroupName $resourceGroupName `
+    -VMName $vmName `
+    -Name "AzureMonitorLinuxAgent" `
+    -Publisher "Microsoft.Azure.Monitor" `
+    -ExtensionType "AzureMonitorLinuxAgent" `
+    -TypeHandlerVersion "1.33" `
+    -EnableAutomaticUpgrade $true `
+    -Location $location
