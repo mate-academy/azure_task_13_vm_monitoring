@@ -1,4 +1,4 @@
-$location = "denmarkeast"
+$location = "westeurope"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -10,11 +10,19 @@ $sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
+$vmSize = "Standard_F2as_v6"
 $dnsLabel = "matetask" + (Get-Random -Count 1) 
+$workspaceName = "linux-log-workspace"
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
+
+Write-Host "Creating Log Analytics Workspace..."
+New-AzOperationalInsightsWorkspace `
+    -ResourceGroupName $resourceGroupName `
+    -Name $workspaceName `
+    -Location $location `
+    -Sku PerGB2018
 
 Write-Host "Creating a network security group $networkSecurityGroupName ..."
 $nsgRuleSSH = New-AzNetworkSecurityRuleConfig -Name SSH  -Protocol Tcp -Direction Inbound -Priority 1001 -SourceAddressPrefix * -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 22 -Access Allow;
@@ -28,21 +36,25 @@ New-AzVirtualNetwork -Name $virtualNetworkName -ResourceGroupName $resourceGroup
 Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
-Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+# Write-Host "Creating a Public IP Address ..."
+# New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
 New-AzVm `
--ResourceGroupName $resourceGroupName `
--Name $vmName `
--Location $location `
--image $vmImage `
--size $vmSize `
--SubnetName $subnetName `
--VirtualNetworkName $virtualNetworkName `
--SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+    -ResourceGroupName $resourceGroupName `
+    -Name $vmName `
+    -Location $location `
+    -Image $vmImage `
+    -Size $vmSize `
+    -SubnetName $subnetName `
+    -VirtualNetworkName $virtualNetworkName `
+    -SecurityGroupName $networkSecurityGroupName `
+    -SshKeyName $sshKeyName `
+    -PublicIpAddressName $publicIpAddressName `
+    -PublicIpSku Standard `
+    -AllocationMethod Static `
+    -SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -57,6 +69,19 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+$vm = Get-AzVM `
+    -ResourceGroupName $resourceGroupName `
+    -Name $vmName
+
+$settings = @{
+    authentication = @{
+        managedIdentity = @{
+            "identifier-name"  = "mi_res_id"
+            "identifier-value" = $vm.Id
+        }
+    }
+}
+
 Set-AzVMExtension `
     -ResourceGroupName $resourceGroupName `
     -VMName $vmName `
@@ -65,4 +90,6 @@ Set-AzVMExtension `
     -ExtensionType "AzureMonitorLinuxAgent" `
     -TypeHandlerVersion "1.33" `
     -EnableAutomaticUpgrade $true `
-    -Location $location
+    -Location $location `
+    -Settings $settings
+
