@@ -69,18 +69,18 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
-$vm = Get-AzVM `
+$workspace = Get-AzOperationalInsightsWorkspace `
     -ResourceGroupName $resourceGroupName `
-    -Name $vmName
+    -Name $workspaceName
 
+$key = Get-AzOperationalInsightsWorkspaceSharedKey `
+    -ResourceGroupName "mate-azure-task-13" `
+    -Name $workspace.Name
+    
 $settings = @{
-    authentication = @{
-        managedIdentity = @{
-            "identifier-name"  = "mi_res_id"
-            "identifier-value" = $vm.Id
-        }
-    }
-}
+    workspaceId = $workspace.CustomerId
+    workspaceKey = $key.PrimarySharedKey
+} | ConvertTo-Json
 
 Set-AzVMExtension `
     -ResourceGroupName $resourceGroupName `
@@ -91,5 +91,5 @@ Set-AzVMExtension `
     -TypeHandlerVersion "1.33" `
     -EnableAutomaticUpgrade $true `
     -Location $location `
-    -Settings $settings
+    -SettingString $settings
 
