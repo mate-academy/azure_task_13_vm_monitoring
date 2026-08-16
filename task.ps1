@@ -67,3 +67,17 @@ $AmaParams = @{
     Location          = $location
 }
 Set-AzVMExtension @AmaParams
+
+
+New-AzResourceGroupDeployment `
+    -ResourceGroupName $resourceGroupName `
+    -Name "dcr-deployment" `
+    -TemplateFile "$PSScriptRoot/dcr.json"
+
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+$dcr = Get-AzDataCollectionRule -ResourceGroupName $resourceGroupName -Name "mate-azure-task-13-dcr"
+
+New-AzDataCollectionRuleAssociation `
+    -TargetResourceId $vm.Id `
+    -AssociationName "matebox-dcr-assoc" `
+    -RuleId $dcr.Id
