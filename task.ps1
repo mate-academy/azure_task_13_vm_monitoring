@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "polandcentral"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -10,8 +10,10 @@ $sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+$vmSize = "Standard_B2ats_v2"
+$dnsLabel = "matetask" + (Get-Random -Count 1)
+$AgentMonitorVersion = '1.0'
+
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -42,7 +44,8 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -57,3 +60,18 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+
+$location = "polandcentral"
+$resourceGroupName = "mate-azure-task-13"
+$vmName = "matebox"
+$AgentMonitorVersion = "1.0"
+
+Set-AzVMExtension `
+    -Name AzureMonitorLinuxAgent `
+    -ExtensionType AzureMonitorLinuxAgent `
+    -Publisher Microsoft.Azure.Monitor `
+    -ResourceGroupName $resourceGroupName `
+    -VMName $vmName `
+    -Location $location `
+    -TypeHandlerVersion $AgentMonitorVersion `
+    -EnableAutomaticUpgrade $true
