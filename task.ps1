@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "denmarkeast"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -6,7 +6,7 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
+$sshKeyPublicKey = Get-Content "./my_key.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
@@ -29,7 +29,7 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
@@ -42,7 +42,9 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName `
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -52,8 +54,66 @@ $Params = @{
     Publisher          = 'Microsoft.Azure.Extensions'
     ExtensionType      = 'CustomScript'
     TypeHandlerVersion = '2.1'
-    Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
+    Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = 'bash install-app.sh'}
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
+$Params = @{
+    Name                     = "AzureMonitorLinuxAgent"
+    ExtensionType            = "AzureMonitorLinuxAgent"
+    Publisher                = "Microsoft.Azure.Monitor"
+    ResourceGroupName        = $resourceGroupName
+    VMName                   = $vmName
+    Location                 = $location
+    TypeHandlerVersion       = "1.0" # Replace with the latest version number
+    EnableAutomaticUpgrade   = $true
+}
+Set-AzVMExtension @Params
+
+$dcrName = "matebox-dcr"
+
+$dcrConfig = @{
+    location = $location
+    kind = "Linux"
+    properties = @{
+        dataSources = @{
+            performanceCounters = @(
+                @{
+                    name = "perfCounterDataSource"
+                    streams = @("Microsoft-InsightsMetrics")
+                    samplingFrequencyInSeconds = 60
+                    counterSpecifiers = @(
+                        "Memory\% Used Memory",
+                        "Memory\Available MBytes Memory",
+                        "Processor(*)\% Processor Time",
+                        "Logical Disk(*)\% Free Space"
+                    )
+                }
+            )
+        }
+        destinations = @{
+            azureMonitorMetrics = @{
+                name = "azureMonitorMetrics-default"
+            }
+        }
+        dataFlows = @(
+            @{
+                streams = @("Microsoft-InsightsMetrics")
+                destinations = @("azureMonitorMetrics-default")
+            }
+        )
+    }
+} | ConvertTo-Json -Depth 10
+
+$dcr = New-AzDataCollectionRule `
+    -Name $dcrName `
+    -ResourceGroupName $resourceGroupName `
+    -JsonString $dcrConfig
+
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+
+New-AzDataCollectionRuleAssociation `
+    -AssociationName "$vmName-dcr-assoc" `
+    -ResourceUri $vm.Id `
+    -DataCollectionRuleId $dcr.Id
