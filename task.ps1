@@ -84,10 +84,10 @@ $dcrConfig = @{
                     streams = @("Microsoft-InsightsMetrics")
                     samplingFrequencyInSeconds = 60
                     counterSpecifiers = @(
-                        "\Memory\% Used Memory",
-                        "\Memory\Available MBytes Memory",
-                        "\Processor\% Processor Time",
-                        "\LogicalDisk(*)\% Free Space"
+                        "Memory\% Used Memory",
+                        "Memory\Available MBytes Memory",
+                        "Processor(*)\% Processor Time",
+                        "Logical Disk(*)\% Free Space"
                     )
                 }
             )
