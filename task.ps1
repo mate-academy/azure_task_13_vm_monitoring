@@ -69,5 +69,51 @@ $Params = @{
     TypeHandlerVersion       = "1.0" # Replace with the latest version number
     EnableAutomaticUpgrade   = $true
 }
-
 Set-AzVMExtension @Params
+
+$dcrName = "matebox-dcr"
+
+$dcrConfig = @{
+    location = $location
+    kind = "Linux"
+    properties = @{
+        dataSources = @{
+            performanceCounters = @(
+                @{
+                    name = "perfCounterDataSource"
+                    streams = @("Microsoft-InsightsMetrics")
+                    samplingFrequencyInSeconds = 60
+                    counterSpecifiers = @(
+                        "\Memory\% Used Memory",
+                        "\Memory\Available MBytes Memory",
+                        "\Processor\% Processor Time",
+                        "\LogicalDisk(*)\% Free Space"
+                    )
+                }
+            )
+        }
+        destinations = @{
+            azureMonitorMetrics = @{
+                name = "azureMonitorMetrics-default"
+            }
+        }
+        dataFlows = @(
+            @{
+                streams = @("Microsoft-InsightsMetrics")
+                destinations = @("azureMonitorMetrics-default")
+            }
+        )
+    }
+} | ConvertTo-Json -Depth 10
+
+$dcr = New-AzDataCollectionRule `
+    -Name $dcrName `
+    -ResourceGroupName $resourceGroupName `
+    -JsonString $dcrConfig
+
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+
+New-AzDataCollectionRuleAssociation `
+    -AssociationName "$vmName-dcr-assoc" `
+    -ResourceUri $vm.Id `
+    -DataCollectionRuleId $dcr.Id
