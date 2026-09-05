@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "denmarkeast"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -29,7 +29,7 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
@@ -42,7 +42,10 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+-SshKeyName $sshKeyName `
+-PublicIpAddressName $publicIpAddressName `
+-SystemAssignedIdentity `
+-GenerateSshKey:$false
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -57,3 +60,30 @@ $Params = @{
 Set-AzVMExtension @Params
 
 # Install Azure Monitor Agent VM extention -> 
+$AMAParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.21'
+    EnableAutomaticUpgrade = $true
+}
+Set-AzVMExtension @AMAParams
+
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+$amaExtension = Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name 'AzureMonitorLinuxAgent'
+$cseExtension = Get-AzVMExtension -ResourceGroupName $resourceGroupName -VMName $vmName -Name 'CustomScript'
+
+$result = [PSCustomObject]@{
+    VMName                  = $vm.Name
+    Location                = $vm.Location
+    ProvisioningState       = $vm.ProvisioningState
+    IdentityType            = $vm.Identity.Type
+    IdentityPrincipalId     = $vm.Identity.PrincipalId
+    AzureMonitorAgentStatus = $amaExtension.ProvisioningState
+    CustomScriptStatus      = $cseExtension.ProvisioningState
+    PublicUrl               = "http://$dnsLabel.$location.cloudapp.azure.com:8080"
+}
+
+$result | ConvertTo-Json | Out-File -FilePath "result.json"
