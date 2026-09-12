@@ -80,3 +80,32 @@ Set-AzVMExtension `
     -Location $location `
     -TypeHandlerVersion "1.0" `
     -EnableAutomaticUpgrade $true
+
+Write-Host "Creating a Data Collection Rule for guest OS metrics..."
+Register-AzResourceProvider -ProviderNamespace Microsoft.Insights | Out-Null
+$dcrName = "mate-vm-guest-metrics"
+$perfCounters = New-AzPerfCounterDataSourceObject `
+    -Name "vmGuestMetrics" `
+    -SamplingFrequencyInSecond 60 `
+    -Stream "Microsoft-InsightsMetrics" `
+    -CounterSpecifier @(
+        "\\Processor Information(_Total)\\% Processor Time",
+        "\\Memory\\Available Bytes",
+        "\\Memory\\% Available Memory",
+        "\\LogicalDisk(_Total)\\% Free Space"
+    )
+$dataFlow = New-AzDataFlowObject -Stream "Microsoft-InsightsMetrics" -Destination "azureMonitorMetrics-default"
+$dcr = New-AzDataCollectionRule `
+    -Name $dcrName `
+    -ResourceGroupName $resourceGroupName `
+    -Location $location `
+    -DataFlow $dataFlow `
+    -DataSourcePerformanceCounter $perfCounters `
+    -DestinationAzureMonitorMetricName "azureMonitorMetrics-default"
+
+Write-Host "Associating the Data Collection Rule with the VM..."
+$vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
+New-AzDataCollectionRuleAssociation `
+    -AssociationName "$vmName-guest-metrics" `
+    -ResourceUri $vm.Id `
+    -DataCollectionRuleId $dcr.Id
