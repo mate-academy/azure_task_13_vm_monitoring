@@ -1,4 +1,4 @@
-$location = "uksouth"
+$location = "westus2"
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -6,12 +6,15 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
+$sshKeyPublicKey = Get-Content "~/.ssh/id_ed25519.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
-$dnsLabel = "matetask" + (Get-Random -Count 1) 
+$vmSize = "Standard_D2as_v7"
+$dnsLabel = "matetask" + (Get-Random -Count 1)
+$vmUsername = "azureuser"
+$vmPassword = ConvertTo-SecureString "SomeP@ssw0rd123!" -AsPlainText -Force
+$vmCredential = New-Object System.Management.Automation.PSCredential ($vmUsername, $vmPassword)
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -29,7 +32,7 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
@@ -42,7 +45,7 @@ New-AzVm `
 -SubnetName $subnetName `
 -VirtualNetworkName $virtualNetworkName `
 -SecurityGroupName $networkSecurityGroupName `
--SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName
+    -SshKeyName $sshKeyName  -PublicIpAddressName $publicIpAddressName -Credential $vmCredential -SystemAssignedIdentity
 
 Write-Host "Installing the TODO web app..."
 $Params = @{
@@ -56,4 +59,14 @@ $Params = @{
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+# Install Azure Monitor Agent VM extention ->
+$ParamsMonitoring = @{
+    ResourceGroupName = $resourceGroupName
+    VMName = $vmName
+    Name = 'CustomScriptMonitoring'
+    Publisher = 'Microsoft.Azure.Monitor'
+    ExtensionType = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion     = '1.9'
+    EnableAutomaticUpgrade = $true
+}
+Set-AzVMExtension @ParamsMonitoring
