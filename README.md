@@ -79,3 +79,5 @@ Here is how to complete tasks in this module:
 6. When all tests will pass — commit your changes and submit the solution for review. 
 
 Pro tip: If you are stuck with any of the implementation steps, run `scripts/generate-artifacts.ps1` and `scripts/validate-artifacts.ps1`. The validation script might give you a hint on what to do.  
+
+[//]: # (trigger review)
