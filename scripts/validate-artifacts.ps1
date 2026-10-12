@@ -142,9 +142,9 @@ if ($virtualMachine) {
     throw "Unable to find Virtual Machine in the task resource group. Please make sure that your script creates a virtual machine and try again."
 }
 
-if ($virtualMachine.identity.type -eq "SystemAssigned") { 
+if ($virtualMachine.identity.type -eq "SystemAssigned") {
     Write-Output "`u{2705} Checked if VM has system-assigned identity enabled - OK."
-} else { 
+} else {
     Write-Output `u{1F914}
     throw "Unable to verify that VM has system-assigned mannaged identity enabled. Please check if you are enabling the system-assigned mannaged identity on the VM and try again."
 }
@@ -235,9 +235,9 @@ if ($extention.properties.settings.fileUris[0]) {
 
 $dcr = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Insights/dataCollectionRules")
 if ($dcr) {
-    if ($dcr.name.Count -eq 1) { 
+    if ($dcr.name.Count -eq 1) {
         Write-Output "`u{2705} Checked if the data collection rule exists - OK"
-    }  else { 
+    }  else {
         Write-Output `u{1F914}
         throw "More than one Azure Monitor Data Collection rule was found in the VM resource group. Please delete all un-used data collection rules and try again."
     }

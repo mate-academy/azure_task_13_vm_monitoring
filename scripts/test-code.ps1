@@ -37,10 +37,10 @@ if ($scriptContent | Where-Object {$_.ToLower().Contains("set-azvmextension")}) 
 } 
 
 if ($scriptContent | Where-Object {$_.ToLower().Contains("-systemassignedidentity")}) {
-    Write-Host "Checking if script enables system-assigned mannaged identity on the VM - ok" 
-} else { 
+    Write-Host "Checking if script enables system-assigned mannaged identity on the VM - ok"
+} else {
     throw "Script is enabling system-assigned mannaged identity on the VM, please review it. "
-} 
+}
 
 if ($scriptContent | Where-Object {$_.Contains("AzureMonitorLinuxAgent")}) {
     Write-Host "Checking if script installs Azure Monitor Agent - ok" 
