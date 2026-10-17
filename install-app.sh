@@ -1,88 +1,71 @@
 #!/bin/bash
 
-set -e
+set -Eeuo pipefail
 
-export DEBIAN_FRONTEND=noninteractive
-
-REPOSITORY_URL="https://github.com/aleksandrmajlo/azure_task_13_vm_monitoring.git"
-REPOSITORY_BRANCH="azure-majlo"
+REPOSITORY_ARCHIVE="https://github.com/aleksandrmajlo/azure_task_13_vm_monitoring/archive/refs/heads/azure-majlo.tar.gz"
+ARCHIVE_PATH="/tmp/azure_task_13_vm_monitoring.tar.gz"
 TEMP_DIRECTORY="/tmp/azure_task_13_vm_monitoring"
 APP_DIRECTORY="/app"
 
-wait_for_apt() {
-    while \
-        fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
-        fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
-        fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
-        fuser /var/cache/apt/archives/lock >/dev/null 2>&1
-    do
-        echo "Waiting for another apt process..."
-        sleep 5
-    done
-}
+echo "Checking Python..."
 
-echo "Updating package information..."
+python3 --version
 
-update_success=false
+echo "Checking pip..."
 
-for attempt in 1 2 3 4 5
-do
-    wait_for_apt
+if ! python3 -m pip --version >/dev/null 2>&1
+then
+    echo "Installing pip without apt..."
 
-    if apt-get update \
-        -o APT::Update::Post-Invoke-Success::=
-    then
-        update_success=true
-        break
-    fi
+    python3 - <<'PYTHON'
+import urllib.request
 
-    echo "apt-get update failed. Retrying..."
-    sleep 15
-done
+urllib.request.urlretrieve(
+    "https://bootstrap.pypa.io/get-pip.py",
+    "/tmp/get-pip.py",
+)
+PYTHON
 
-if [ "$update_success" != "true" ]; then
-    echo "Unable to update package information."
-    exit 1
-fi
-
-echo "Installing required packages..."
-
-install_success=false
-
-for attempt in 1 2 3 4 5
-do
-    wait_for_apt
-
-    if apt-get install -yq python3-pip git
-    then
-        install_success=true
-        break
-    fi
-
-    echo "Package installation failed. Retrying..."
-    sleep 15
-done
-
-if [ "$install_success" != "true" ]; then
-    echo "Unable to install required packages."
-    exit 1
+    python3 /tmp/get-pip.py --break-system-packages
 fi
 
 echo "Downloading application..."
 
 rm -rf "$TEMP_DIRECTORY"
 rm -rf "$APP_DIRECTORY"
+rm -f "$ARCHIVE_PATH"
 
-git clone \
-    --branch "$REPOSITORY_BRANCH" \
-    --single-branch \
-    "$REPOSITORY_URL" \
-    "$TEMP_DIRECTORY"
-
+mkdir -p "$TEMP_DIRECTORY"
 mkdir -p "$APP_DIRECTORY"
+
+python3 - <<PYTHON
+import urllib.request
+
+urllib.request.urlretrieve(
+    "$REPOSITORY_ARCHIVE",
+    "$ARCHIVE_PATH",
+)
+PYTHON
+
+echo "Extracting application..."
+
+tar \
+    -xzf "$ARCHIVE_PATH" \
+    -C "$TEMP_DIRECTORY" \
+    --strip-components=1
+
 cp -r "$TEMP_DIRECTORY/app/." "$APP_DIRECTORY/"
 
 chmod +x "$APP_DIRECTORY/start.sh"
+
+echo "Installing Python dependencies..."
+
+cd "$APP_DIRECTORY"
+
+PIP_BREAK_SYSTEM_PACKAGES=1 \
+python3 -m pip install \
+    --disable-pip-version-check \
+    -r requirements.txt
 
 echo "Configuring todoapp service..."
 
@@ -94,3 +77,5 @@ systemctl enable todoapp
 systemctl restart todoapp
 
 echo "Application installation completed."
+
+systemctl status todoapp --no-pager
