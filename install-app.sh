@@ -1,23 +1,96 @@
 #!/bin/bash
 
-# Script to silently install and start the todo web app on the virtual machine. 
-# Note that all commands bellow are without sudo - that's because extention mechanism 
-# runs scripts under root user. 
+set -e
 
-# install system updates and isntall python3-pip package using apt. '-yq' flags are 
-# used to suppress any interactive prompts - we won't be able to confirm operation 
-# when running the script as VM extention.  
-apt-get update -yq
-apt-get install python3-pip -yq
+export DEBIAN_FRONTEND=noninteractive
 
-# Create a directory for the app and download the files. 
-mkdir /app 
-# make sure to uncomment the line bellow and update the link with your GitHub username
-git clone https://github.com/mate-academy/azure_task_13_vm_monitoring.git
-cp -r azure_task_13_vm_monitoring/app/* /app
+REPOSITORY_URL="https://github.com/aleksandrmajlo/azure_task_13_vm_monitoring.git"
+REPOSITORY_BRANCH="azure-majlo"
+TEMP_DIRECTORY="/tmp/azure_task_13_vm_monitoring"
+APP_DIRECTORY="/app"
 
-# create a service for the app via systemctl and start the app
-mv /app/todoapp.service /etc/systemd/system/
+wait_for_apt() {
+    while \
+        fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
+        fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
+        fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
+        fuser /var/cache/apt/archives/lock >/dev/null 2>&1
+    do
+        echo "Waiting for another apt process..."
+        sleep 5
+    done
+}
+
+echo "Updating package information..."
+
+update_success=false
+
+for attempt in 1 2 3 4 5
+do
+    wait_for_apt
+
+    if apt-get update \
+        -o APT::Update::Post-Invoke-Success::=
+    then
+        update_success=true
+        break
+    fi
+
+    echo "apt-get update failed. Retrying..."
+    sleep 15
+done
+
+if [ "$update_success" != "true" ]; then
+    echo "Unable to update package information."
+    exit 1
+fi
+
+echo "Installing required packages..."
+
+install_success=false
+
+for attempt in 1 2 3 4 5
+do
+    wait_for_apt
+
+    if apt-get install -yq python3-pip git
+    then
+        install_success=true
+        break
+    fi
+
+    echo "Package installation failed. Retrying..."
+    sleep 15
+done
+
+if [ "$install_success" != "true" ]; then
+    echo "Unable to install required packages."
+    exit 1
+fi
+
+echo "Downloading application..."
+
+rm -rf "$TEMP_DIRECTORY"
+rm -rf "$APP_DIRECTORY"
+
+git clone \
+    --branch "$REPOSITORY_BRANCH" \
+    --single-branch \
+    "$REPOSITORY_URL" \
+    "$TEMP_DIRECTORY"
+
+mkdir -p "$APP_DIRECTORY"
+cp -r "$TEMP_DIRECTORY/app/." "$APP_DIRECTORY/"
+
+chmod +x "$APP_DIRECTORY/start.sh"
+
+echo "Configuring todoapp service..."
+
+mv "$APP_DIRECTORY/todoapp.service" \
+    /etc/systemd/system/todoapp.service
+
 systemctl daemon-reload
-systemctl start todoapp
 systemctl enable todoapp
+systemctl restart todoapp
+
+echo "Application installation completed."
