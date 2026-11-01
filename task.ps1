@@ -1,4 +1,4 @@
-$location = "westus2" # any region that is available in your Azure subscription
+$location = "swedencentral" # any region that is available in your Azure subscription
 $resourceGroupName = "mate-azure-task-13"
 $networkSecurityGroupName = "defaultnsg"
 $virtualNetworkName = "vnet"
@@ -6,11 +6,11 @@ $subnetName = "default"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
 $sshKeyName = "linuxboxsshkey"
-$sshKeyPublicKey = Get-Content "~/.ssh/id_rsa.pub" 
+$sshKeyPublicKey = Get-Content "$HOME/.ssh/id_ed25519.pub"
 $publicIpAddressName = "linuxboxpip"
 $vmName = "matebox"
 $vmImage = "Ubuntu2204"
-$vmSize = "Standard_B1s"
+$vmSize = "Standard_B2ts_v2"
 $dnsLabel = "matetask" + (Get-Random -Count 1) 
 
 Write-Host "Creating a resource group $resourceGroupName ..."
@@ -29,11 +29,12 @@ Write-Host "Creating a SSH key ..."
 New-AzSshKey -Name $sshKeyName -ResourceGroupName $resourceGroupName -PublicKey $sshKeyPublicKey
 
 Write-Host "Creating a Public IP Address ..."
-New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Basic -AllocationMethod Dynamic -DomainNameLabel $dnsLabel
+New-AzPublicIpAddress -Name $publicIpAddressName -ResourceGroupName $resourceGroupName -Location $location -Sku Standard -AllocationMethod Static -DomainNameLabel $dnsLabel
 
 Write-Host "Creating a VM ..."
 # Update the VM deployment command to enable a system-assigned mannaged identity on it. 
 New-AzVm `
+-SystemAssignedIdentity `
 -ResourceGroupName $resourceGroupName `
 -Name $vmName `
 -Location $location `
@@ -52,8 +53,20 @@ $Params = @{
     Publisher          = 'Microsoft.Azure.Extensions'
     ExtensionType      = 'CustomScript'
     TypeHandlerVersion = '2.1'
-    Settings          = @{fileUris = @('https://raw.githubusercontent.com/mate-academy/azure_task_13_vm_monitoring/main/install-app.sh'); commandToExecute = './install-app.sh'}
+    Settings          = @{fileUris = @('https://raw.githubusercontent.com/daniilshpak/azure_task_13_vm_monitoring/refs/heads/main/install-app.sh'); commandToExecute = 'bash install-app.sh'}
 }
 Set-AzVMExtension @Params
 
-# Install Azure Monitor Agent VM extention -> 
+
+Write-Host "Installing Azure Monitor Agent..."
+$AMAParams = @{
+    ResourceGroupName  = $resourceGroupName
+    VMName             = $vmName
+    Name               = 'AzureMonitorLinuxAgent'
+    Publisher          = 'Microsoft.Azure.Monitor'
+    ExtensionType      = 'AzureMonitorLinuxAgent'
+    TypeHandlerVersion = '1.0'
+    Location           = $location
+}
+
+Set-AzVMExtension @AMAParams
