@@ -74,7 +74,7 @@ Here is how to complete tasks in this module:
 
 4. Run `scripts/generate-artifacts.ps1` to generate task artifacts. The script will update the file `artifacts.json` in this repo. 
 
-5. Run `scripts/validate-artifacts.ps1` to test yourself. If tests fail, follow the recommendation from the test script error message to fix or re-deploy your infrastructure. When you are ready to test yourself again — **re-generate the artifacts** (step 4) and re-run tests again. 
+5. Run `scripts/validate-artifacts.ps1` to test yourself. If tests fail, follow the recommendation from the test script error message to fix or re-deploy your infrastructure. When you are ready to test yourself again — **re-generate the artifacts** (step 4) and re-run tests again.
 
 6. When all tests will pass — commit your changes and submit the solution for review. 
 
